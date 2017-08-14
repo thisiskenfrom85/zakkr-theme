@@ -1,65 +1,43 @@
 /*============================================================================
-  Debut | Built with Shopify Slate
-
-  Some things to know about this file:
-    - Sass is compiled on Shopify's server so you don't need to convert it to CSS yourself
-    - The output CSS is compressed and comments are removed
-    - You cannot use native CSS/Sass @imports in this file without a build script
+  Brooklyn by Shopify
 ==============================================================================*/
 
-/*================ SASS HELPERS ================*/
+/*================ Variables, theme settings, and Sass mixins from Timber ================*/
 /*============================================================================
-  Convert pixels to ems
-  eg. for a relational value of 12px write em(12) when the parent is 16px
-  if the parent is another value say 24px write em(12, 24)
-  Based on https://github.com/thoughtbot/bourbon/blob/master/app/assets/stylesheets/functions/_px-to-em.scss
+  #Sass Mixins
 ==============================================================================*/
-@function em($pxval, $base: $font-size-base) {
-  @if not unitless($pxval) {
-    $pxval: strip-units($pxval);
-  }
-  @if not unitless($base) {
-    $base: strip-units($base);
-  }
-  @return ($pxval / $base) * 1em;
-}
-
-/*============================================================================
-  Strips the unit from a number.
-  @param {Number (With Unit)} $value
-  @example scss - Usage
-    $dimension: strip-units(10em);
-  @example css - CSS Output
-    $dimension: 10;
-  @return {Number (Unitless)}
-  based on https://github.com/thoughtbot/bourbon/blob/master/app/assets/stylesheets/functions/_strip-units.scss
-==============================================================================*/
-@function strip-units($value) {
-  @return ($value / ($value * 0 + 1));
-}
-
-/*================ #Mixins ================*/
-@mixin clearfix() {
-  &::after {
+.clearfix {
+  &:after {
     content: '';
     display: table;
     clear: both;
   }
+}
 
-  // sass-lint:disable no-misspelled-properties
-  *zoom: 1;
+@mixin clearfix() {
+  &:after {
+    content: '';
+    display: table;
+    clear: both;
+  }
+}
+
+@mixin prefix($property, $value) {
+  -webkit-#{$property}: #{$value};
+  -moz-#{$property}: #{$value};
+  -ms-#{$property}: #{$value};
+  -o-#{$property}: #{$value};
+  #{$property}: #{$value};
 }
 
 /*============================================================================
   Prefix mixin for generating vendor prefixes.
   Based on https://github.com/thoughtbot/bourbon/blob/master/app/assets/stylesheets/addons/_prefixer.scss
-
   Usage:
     // Input:
     .element {
       @include prefix(transform, scale(1), ms webkit spec);
     }
-
     // Output:
     .element {
       -ms-transform: scale(1);
@@ -67,7 +45,7 @@
       transform: scale(1);
     }
 ==============================================================================*/
-@mixin prefix($property, $value, $prefixes) {
+@mixin prefixFlex($property, $value, $prefixes) {
   @each $prefix in $prefixes {
     @if $prefix == webkit {
       -webkit-#{$property}: $value;
@@ -85,132 +63,170 @@
   }
 }
 
-@mixin user-select($value: none) {
-  @include prefix('user-select', #{$value}, moz ms webkit spec);
-}
-
-/*================ Media Query Mixin ================*/
-@mixin media-query($media-query) {
-  $breakpoint-found: false;
-
-  @each $breakpoint in $grid-breakpoints {
-    $name: nth($breakpoint, 1);
-    $declaration: nth($breakpoint, 2);
-
-    @if $media-query == $name and $declaration {
-      $breakpoint-found: true;
-
-      @media only screen and #{$declaration} {
-        @content;
-      }
-    }
+@mixin keyframes($name) {
+  @-webkit-keyframes #{$name} {
+    @content;
   }
-
-  @if $breakpoint-found == false {
-    @warn 'Breakpoint "#{$media-query}" does not exist';
+  @-moz-keyframes #{$name} {
+    @content;
+  }
+  @-ms-keyframes #{$name} {
+    @content;
+  }
+  @keyframes #{$name} {
+    @content;
   }
 }
 
-/*================ Responsive Show/Hide Helper ================*/
-@mixin responsive-display-helper($grid-breakpoint-type: '') {
-  // sass-lint:disable no-important
-  .#{$grid-breakpoint-type}show {
-    display: block !important;
+@mixin transition($transition: 0.1s all) {
+  @include prefix('transition', #{$transition});
+}
+
+@mixin transform($transform: 0.1s all) {
+  @include prefix('transform', #{$transform});
+}
+
+@mixin animation($animation) {
+  -webkit-animation: $animation;
+  -moz-animation:    $animation;
+  -o-animation:      $animation;
+  animation:         $animation;
+}
+
+@mixin gradient($from, $to, $fallback) {
+  background: $fallback;
+  background: -moz-linear-gradient(top, $from 0%, $to 100%);
+  background: -webkit-gradient(linear, left top, left bottom, color-stop(0%,$from), color-stop(100%,$to));
+  background: -webkit-linear-gradient(top, $from 0%, $to 100%);
+  background: -o-linear-gradient(top, $from 0%, $to 100%);
+  background: -ms-linear-gradient(top, $from 0%, $to 100%);
+  background: linear-gradient(top bottom, $from 0%, $to 100%);
+}
+
+@mixin backface($visibility: hidden) {
+  @include prefix('backface-visibility', #{$visibility});
+}
+
+@mixin box-sizing($box-sizing: border-box) {
+  -webkit-box-sizing: #{$box-sizing};
+  -moz-box-sizing: #{$box-sizing};
+  box-sizing: #{$box-sizing};
+}
+
+/*================ Functions ================*/
+@function em($target, $context: $baseFontSize) {
+  @if $target == 0 {
+    @return 0;
   }
+  @return $target / $context + 0em;
+}
 
-  .#{$grid-breakpoint-type}hide {
-    display: none !important;
+@function color-control($color) {
+  @if (lightness( $color ) > 40) {
+    @return #1c1d1d;
+  }
+  @else {
+    @return #fff;
   }
 }
 
-
-/*================ Responsive Text Alignment Helper ================*/
-@mixin responsive-text-align-helper($grid-breakpoint-type: '') {
-  // sass-lint:disable no-important
-  .#{$grid-breakpoint-type}text-left {
-    text-align: left !important;
+@function adaptive-color($color, $percentage) {
+  @if (lightness( $color ) > 40) {
+    @return darken($color, $percentage);
   }
-
-  .#{$grid-breakpoint-type}text-right {
-    text-align: right !important;
-  }
-
-  .#{$grid-breakpoint-type}text-center {
-    text-align: center !important;
+  @else {
+    @return lighten($color, $percentage);
   }
 }
 
-@mixin placeholder-text($color: $color-text-field-text, $opacity: 0.6) {
-  color: $color;
-  opacity: $opacity;
+@function strip-units($number) {
+  @return $number / ($number * 0 + 1);
 }
 
-@mixin error-placeholder-text($color: $color-error-input-text, $opacity: 0.5) {
-  color: $color;
-  opacity: $opacity;
+//Font Stack Mixins
+@mixin headerFontStack {
+  font-family: $headerFontStack;
+  font-weight: $headerFontWeight;
 }
 
-@mixin transform($transform) {
-  @include prefix(transform, $transform, ms webkit spec);
+@mixin accentFontStack {
+  font-family: $accentFontStack;
+  font-weight: $accentFontWeight;
+  font-style: normal;
+  {% if settings.type_accent_spacing %}
+    letter-spacing: 0.1em;
+  {% endif %}
+  {% if settings.type_accent_transform %}
+    text-transform: uppercase;
+  {% endif %}
 }
 
-@mixin transition($transition) {
-  @include prefix(transition, $transition, ms webkit spec);
+@mixin bodyFontItalic {
+  {% if settings.type_base_italize_titles %}
+    font-style: italic;
+  {% endif %}
 }
 
-@mixin gradient($side, $from, $to) {
-  background: -ms-linear-gradient($side, $from 0%, $to 100%);
-  background: linear-gradient(to $side, $from 0%, $to 100%);
-}
-
-@mixin spinner($size: 20px, $color: $color-btn-primary-text) {
-  content: '';
-  display: block;
-  width: $size;
-  height: $size;
-  position: absolute;
-  margin-left: - $size / 2;
-  margin-top: - $size / 2;
-  border-radius: 50%;
-  border: 3px solid $color;
-  border-top-color: transparent;
-}
-
-@mixin visually-hidden() {
-  // sass-lint:disable no-important
-  position: absolute !important;
-  overflow: hidden;
+@mixin visuallyHidden {
   clip: rect(0 0 0 0);
+  clip: rect(0, 0, 0, 0);
+  overflow: hidden;
+  position: absolute;
   height: 1px;
   width: 1px;
-  margin: -1px;
-  padding: 0;
-  border: 0;
 }
 
-@mixin visually-shown() {
-  // sass-lint:disable no-important
-  position: inherit !important;
-  overflow: auto;
-  clip: auto;
-  width: auto;
-  height: auto;
-  margin: 0;
+/*================ Animations and keyframes ================*/
+@include keyframes(spin) {
+  0% {
+    @include transform(rotate(0deg));
+  }
+
+  100% {
+    @include transform(rotate(360deg));
+  }
 }
 
-@mixin overlay($z-index: null) {
-  &::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    right: 0;
-    bottom: 0;
-    left: 0;
-    background-color: $color-image-overlay;
-    opacity: $opacity-image-overlay;
+@include keyframes(fadeIn) {
+  0%, 35% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
+  }
+}
 
-    @if ($z-index) {
-      z-index: $z-index;
+@include keyframes(heroContentIn) {
+  0%, 35% {
+    opacity: 0;
+    @include transform('translateY(8px)');
+  }
+  60% {
+    opacity: 1;
+  }
+  100% {
+    @include transform('translateY(0)');
+  }
+}
+
+/*============================================================================
+  Dependency-free breakpoint mixin
+    - http://blog.grayghostvisuals.com/sass/sass-media-query-mixin/
+==============================================================================*/
+$min: min-width;
+$max: max-width;
+@mixin at-query ($constraint, $viewport1, $viewport2:null) {
+  @if $constraint == $min {
+    @media screen and ($min: $viewport1) {
+      @content;
+    }
+  } @else if $constraint == $max {
+    @media screen and ($max: $viewport1) {
+      @content;
+    }
+  } @else {
+    @media screen and ($min: $viewport1) and ($max: $viewport2) {
+      @content;
     }
   }
 }
@@ -227,11 +243,11 @@
 }
 
 @mixin flex-wrap($value: nowrap) {
-  @include prefix(flex-wrap, $value, webkit moz ms spec);
+  @include prefixFlex(flex-wrap, $value, webkit moz ms spec);
 }
 
 @mixin flex-direction($value) {
-  @include prefix(flex-direction, $value, webkit moz ms spec);
+  @include prefixFlex(flex-direction, $value, webkit moz ms spec);
 }
 
 @mixin align-items($value: stretch) {
@@ -245,148 +261,152 @@
 
   // sass-lint:disable no-misspelled-properties
   -ms-flex-align: $alt-value;
-  @include prefix(align-items, $value, webkit moz ms o spec);
+  @include prefixFlex(align-items, $value, webkit moz ms o spec);
 }
 
 @mixin flex($value) {
-  @include prefix(flex, $value, webkit moz ms spec);
+  @include prefixFlex(flex, $value, webkit moz ms spec);
 }
 
 @mixin flex-basis($width: auto) {
   // sass-lint:disable no-misspelled-properties
   -ms-flex-preferred-size: $width;
-  @include prefix(flex-basis, $width, webkit moz spec);
+  @include prefixFlex(flex-basis, $width, webkit moz spec);
 }
 
 @mixin align-self($align: auto) {
   // sass-lint:disable no-misspelled-properties
   -ms-flex-item-align: $align;
-  @include prefix(align-self, $align, webkit spec);
+  @include prefixFlex(align-self, $align, webkit spec);
 }
 
 @mixin justify-content($justify: flex-start) {
-  @include prefix(justify-content, $justify, webkit ms spec);
+  @include prefixFlex(justify-content, $justify, webkit ms spec);
 }
 
+$viewportIncrement: 1px;
+$siteWidth: 1050px;
+$small: 590px;
+$medium: 768px;
+$large: 769px;
+$xlarge: $siteWidth + $viewportIncrement;
 
-/*================ VARIABLES ================*/
-/*============================================================================
-  Grid Breakpoints and Class Names
-    - Do not change the variable names
-==============================================================================*/
-$grid-medium: 750px;
-$grid-large: 990px;
-$grid-widescreen: 1400px;
-$grid-gutter: 30px;
-$grid-gutter-mobile: 22px;
+$postSmall: $small + $viewportIncrement;
+$preMedium: $medium - $viewportIncrement;
+$preLarge: $large - $viewportIncrement;
 
-$small: 'small';
-$medium: 'medium';
-$medium-down: 'medium-down';
-$medium-up: 'medium-up';
-$large: 'large';
-$large-down: 'large-down';
-$large-up: 'large-up';
-$widescreen: 'widescreen';
+/*================ The following are dependencies of csswizardry grid ================*/
+$breakpoints: (
+  'small' '(max-width: #{$small})',
+  'medium' '(min-width: #{$postSmall}) and (max-width: #{$medium})',
+  'medium-down' '(max-width: #{$medium})',
+  'large' '(min-width: #{$large})'
+);
+$breakpoint-has-widths: ('small', 'medium', 'medium-down', 'large');
+$breakpoint-has-push:  ('medium', 'medium-down', 'large');
+$breakpoint-has-pull:  ('medium', 'medium-down', 'large');
 
-/*============================================================================
-  Generate breakpoint-specific column widths and push classes
-    - Default column widths: $grid-breakpoint-has-widths: ($small, $medium-up);
-    - Default is no push classes
-==============================================================================*/
-$grid-breakpoint-has-widths: ($small, $medium-up);
-$grid-breakpoint-has-push: ($small, $medium-up);
-
-/*================ Color Variables ================*/
-
-// Text colors
-$color-text: {{ settings.color_text }};
-$color-text-shadow: rgba(0, 0, 0, 0.1);
-$color-body-text: {{ settings.color_body_text }};
-$color-sale-text: {{ settings.color_sale_text }};
-$color-small-button: {{ settings.color_small_button }};
-$color-small-button-text: {{ settings.color_small_button_text }};
-$color-text-field: {{ settings.color_text_field }};
-$color-text-field-text: {{ settings.color_text_field_text }};
-$color-navigation-text: {{ settings.color_text }};
+/*================ Color variables ================*/
+$colorPrimary: {{ settings.color_primary }};
+$colorSecondary: {{ settings.color_secondary }};
 
 // Button colors
-$color-btn-primary: {{ settings.color_button }};
-$color-btn-primary-text: {{ settings.color_button_text }};
+$colorBtnPrimary: $colorPrimary;
+$colorBtnPrimaryHover: lighten($colorBtnPrimary, 12%);
+$colorBtnPrimaryActive: adaptive-color($colorPrimary, 24%);
+$colorBtnPrimaryText: color-control($colorPrimary);
 
-// Link buttons and secondary cta
-$color-link: $color-body-text;
-$opacity-link-hover: 0.6;
-$transition-link-hover: 0.1s cubic-bezier(0.44, 0.13, 0.48, 0.87);
+$colorBtnSecondary: $colorSecondary;
+$colorBtnSecondaryHover: lighten($colorBtnSecondary, 10%);
+$colorBtnSecondaryActive: adaptive-color($colorSecondary, 10%);
+$colorBtnSecondaryText: color-control($colorSecondary);
+
+// Text link colors
+$colorLink: $colorSecondary;
+$colorLinkHover: $colorPrimary;
+
+// Text colors
+$colorTextBody: {{ settings.color_body_text }};
 
 // Backgrounds
-$color-body: {{ settings.color_body_bg }};
-$color-bg: {{ settings.color_body_bg }};
-$color-drawer-background: rgba(0, 0, 0, 0.6);
-$color-newsletter-background: {{ settings.color_body_text | color_modify: 'alpha', 0.1 }};
-
-// Overlays
-$color-overlay-title-text: {{ settings.color_image_overlay_text }};
-$color-image-overlay: {{ settings.color_image_overlay }};
-$opacity-image-overlay: {{ settings.image_overlay_opacity }};
+$colorBody: {{ settings.color_body_bg }};
+$colorProductBackground: {{ settings.color_product_background }};
+$colorInputBg: {{ settings.color_input }};
+$colorNewsletter: {{ settings.color_newsletter }};
 
 // Border colors
-$color-border: {{ settings.color_borders }};
+$colorBorder: {{ settings.color_borders }};
 
-// Helper colors for form error states
-$color-disabled: #f4f4f4;
-$color-disabled-border: #f4f4f4;
-$color-error: #d20000;
-$color-error-bg: #fff8f8;
-$color-success: #19a340;
-$color-success-bg: #f8fff9;
+// Border size
+$borderWidthHeader: {{ settings.type_header_border_thickness }};
 
-// Forms
-$color-form-text: #333;
-$color-error-input-text: $color-error;
-$input-padding-top-bottom: 10px;
-$input-padding-left-right: 18px;
-$input-padding-top-bottom-small: 8px;
-$input-padding-left-right-small: 15px;
-$input-group-height: 46px;
-$input-group-height-small: 42px;
+// Sale tag color
+$colorSaleTag: {{ settings.color_sale_tag }};
 
-// Social icons
-$color-facebook: #3b5998;
-$color-twitter: #00aced;
-$color-pinterest: #cb2027;
+// Nav and dropdown link background
+$colorNav: $colorBody;
+$colorNavText: $colorTextBody;
 
-/*================ Sizing Variables ================*/
-$width-site: 1200px;
-$gutter-site: 55px;
-$gutter-site-mobile: 22px;
-$section-spacing: 55px;
+// Helper colors
+$disabledGrey: #f6f6f6;
+$disabledBorder: darken($disabledGrey, 25%);
+$errorRed: #d02e2e;
+$errorRedBg: #fff6f6;
+$successGreen: #56ad6a;
+$successGreenBg: #ecfef0;
+
+// Drawer sizes and colors
+$drawerNavWidth: 300px;
+$drawerCartWidth: 300px;
+$drawerCartWidthLarge: 400px; // small-up width
+$drawerHeaderHeight: 80px;
+$drawerCartFooterHeight: 130px; // default, overwritten by JS
+$colorDrawers: {{ settings.color_drawer_background }};
+$colorDrawerBorder: {{ settings.color_drawer_border }};
+$colorDrawerText: {{ settings.color_drawer_text }};
+$colorDrawerButton: {{ settings.color_drawer_button }};
+$colorDrawerButtonText: {{ settings.color_drawer_button_text }};
+$drawerTransition: 'all 0.35s cubic-bezier(0.46, 0.01 , 0.32, 1)';
+
+// Sizing variables
+$gutter: 30px;
+$gridGutterMobile: 22px;
 $section-spacing-small: 35px;
-$border-radius: 2px;
+$gridGutter: 30px; // can be a %, but nested grids will have smaller margins because of it
+$contentTopMargin: 80px;
+$contentTopMarginSmall: 35px;
+$radius: 0;
+$customSelectHeight: 46px;
 
-/*================ Z-Index ================*/
-$z-index-dropdown : 7;
-$z-index-sub-nav: 8;
-$z-index-drawer: 9;
-$z-index-announcement-bar: 10;
-$z-index-skip-to-content: 10000; // really high to be safe of app markup
+// Z-index
+$zindexNavDropdowns: 5;
+$zindexDrawer: 10;
+$zindexHeroHeader: 2;
+$zindexDrawerOverlay: 20;
 
-/*================ SVG ================*/
-$svg-select-icon: #{'{{ "ico-select.svg" | asset_url }}'};
+// Product Collage Grid
+$collageImageXLarge: 670px;
+$collageImageLarge: 520px;
+$collageImageMedium: 310px;
+$collageImageSmall: 230px;
 
-/*================ Drawers ================*/
-$transition-drawer: all 0.45s cubic-bezier(0.29, 0.63, 0.44, 1);
+{% if settings.product_vendor_enable %}
+  $collageImageLarge: 544px;
+{% endif %}
 
-/*================ Hero ================*/
-$color-background-hero-button: #fff;
-$color-text-hero-button: #000;
+// Collection Collage Grid
+// These heights are used to determine the row height for the
+// collection grid.
+$collectionCollageRowHeightFull: 450px;
+$collectionCollageRowHeightLarge: 310px;
+$collectionCollageRowHeightSmall: 280px;
 
-/*================ Hero Slider ================*/
-$color-slideshow-arrows: #000;
-$color-slideshow-dots: #fff;
+// Password page
+$passwordPageUseBgImage: true;
 
-$transition-text-slideshow: all 0.6s cubic-bezier(0.44, 0.13, 0.48, 0.87);
-$transition-image-slideshow: opacity 0.8s cubic-bezier(0.44, 0.13, 0.48, 0.87);
+// Section onboarding
+$color-blankstate: rgba($colorTextBody, 0.35);
+$color-blankstate-background: rgba($colorTextBody, 0.10);
 
 /*================ Typography ================*/
 {% if settings.type_base_family contains 'Google' %}
@@ -407,52 +427,1897 @@ $transition-image-slideshow: opacity 0.8s cubic-bezier(0.44, 0.13, 0.48, 0.87);
   {% assign header_weight = 400 %}
 {% endif %}
 
-$font-weight-normal: 400;
-$font-weight-bold: 700;
+{% if settings.type_accent_family contains 'Google' %}
+  {% assign type_accent_parts = settings.type_accent_family | split: '_' %}
+  {% assign type_accent_name = type_accent_parts[1] %}
+  {% capture accent_family %}"{{ type_accent_name | split: ':' | first | replace: '+', ' ' }}"{% if type_accent_parts.last == 'serif' %}, serif {% else %}, "HelveticaNeue", "Helvetica Neue", sans-serif{% endif %}{% endcapture %}
+  {% assign accent_weight = type_accent_parts[2] | split: ',' %}
+{% else %}
+  {% assign accent_family = settings.type_accent_family %}
+  {% assign accent_weight = 700 %}
+{% endif %}
 
-$font-stack-header: {{ header_family }};
-$font-weight-header: {{ header_weight }};
-$font-size-header: {{ settings.type_header_base_size }};
-$font-bold-titles: {{ settings.type_bold_product_titles }};
+$headerFontStack: {{ header_family }};
+$headerFontWeight: {{ header_weight }};
+$headerBaseFontSize: {{ settings.type_header_base_size }};
 
-$font-stack-body: {{ base_family }};
-$font-size-base: {{ settings.type_base_size }}; // Henseforth known as 1em
+$bodyFontStack: {{ base_family }};
+$baseFontSize: {{ settings.type_base_size }}; // Henseforth known as 1em
 
-$font-stack-cart-notification: "HelveticaNeue","Helvetica Neue",Helvetica,Arial,sans-serif;
+$accentFontStack: {{ accent_family }};
+$accentFontWeight: {{ accent_weight }};
 
-$font-size-mobile-input: 16px; // min 16px to prevent zooming
+@font-face {
+  font-family: 'icons';
+  src: url('{{ "icons.eot" | asset_url }}');
+  src: url('{{ "icons.eot" | asset_url }}#iefix') format("embedded-opentype"),
+       url('{{ "icons.woff" | asset_url }}') format("woff"),
+       url('{{ "icons.ttf" | asset_url }}') format("truetype"),
+       url('{{ "icons.svg" | asset_url }}#timber-icons') format("svg");
+  font-weight: normal;
+  font-style: normal;
+};
 
-/*================ Gift Cards ================*/
-$color-giftcard-tooltip-fallback: #333;
-$color-giftcard-light: #fff;
-$color-giftcard-tooltip: rgba(0, 0, 0, 0.9);
-$color-giftcard-disabled: #999;
-$color-giftcard-small-text: #b3b3b3;
-$color-giftcard-shadow: rgba(0, 0, 0, 0.1);
-$color-giftcard-print-bg: #fff;
-$color-giftcard-print: #000;
-
-/*================ Z-index ================*/
-$z-index-giftcard-image: 2;
-$z-index-giftcard-corners: 3;
-$z-index-giftcard-tooltip: 4;
-$z-index-giftcard-code: 5;
+$socialIconFontStack: 'icons';
 
 
-/*================ VENDOR ================*/
+/*================ Vendor-specific styles ================*/
+/* Magnific Popup CSS */
+.mfp-bg {
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 1042;
+  overflow: hidden;
+  position: fixed;
+  background: #0b0b0b;
+  opacity: 0.8;
+  filter: alpha(opacity=80); }
+
+.mfp-wrap {
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 1043;
+  position: fixed;
+  outline: none !important;
+  -webkit-backface-visibility: hidden; }
+
+.mfp-container {
+  text-align: center;
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  left: 0;
+  top: 0;
+  padding: 0 8px;
+  -webkit-box-sizing: border-box;
+  -moz-box-sizing: border-box;
+  box-sizing: border-box; }
+
+.mfp-container:before {
+  content: '';
+  display: inline-block;
+  height: 100%;
+  vertical-align: middle; }
+
+.mfp-align-top .mfp-container:before {
+  display: none; }
+
+.mfp-content {
+  position: relative;
+  display: inline-block;
+  vertical-align: middle;
+  margin: 0 auto;
+  text-align: left;
+  z-index: 1045; }
+
+.mfp-inline-holder .mfp-content, .mfp-ajax-holder .mfp-content {
+  width: 100%;
+  cursor: auto; }
+
+.mfp-ajax-cur {
+  cursor: progress; }
+
+.mfp-zoom-out-cur, .mfp-zoom-out-cur .mfp-image-holder .mfp-close {
+  cursor: -moz-zoom-out;
+  cursor: -webkit-zoom-out;
+  cursor: zoom-out; }
+
+.mfp-zoom {
+  cursor: pointer;
+  cursor: -webkit-zoom-in;
+  cursor: -moz-zoom-in;
+  cursor: zoom-in; }
+
+.mfp-auto-cursor .mfp-content {
+  cursor: auto; }
+
+.mfp-close, .mfp-arrow, .mfp-preloader, .mfp-counter {
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  user-select: none; }
+
+.mfp-loading.mfp-figure {
+  display: none; }
+
+.mfp-hide {
+  display: none !important; }
+
+.mfp-preloader {
+  color: #CCC;
+  position: absolute;
+  top: 50%;
+  width: auto;
+  text-align: center;
+  margin-top: -0.8em;
+  left: 8px;
+  right: 8px;
+  z-index: 1044; }
+  .mfp-preloader a {
+    color: #CCC; }
+    .mfp-preloader a:hover {
+      color: #FFF; }
+
+.mfp-s-ready .mfp-preloader {
+  display: none; }
+
+.mfp-s-error .mfp-content {
+  display: none; }
+
+button.mfp-close, button.mfp-arrow {
+  overflow: visible;
+  cursor: pointer;
+  background: transparent;
+  border: 0;
+  -webkit-appearance: none;
+  display: block;
+  outline: none;
+  padding: 0;
+  z-index: 1046;
+  -webkit-box-shadow: none;
+  box-shadow: none; }
+button::-moz-focus-inner {
+  padding: 0;
+  border: 0; }
+
+.mfp-close {
+  width: 44px;
+  height: 44px;
+  line-height: 44px;
+  position: absolute;
+  right: 0;
+  top: 0;
+  text-decoration: none;
+  text-align: center;
+  opacity: 0.65;
+  filter: alpha(opacity=65);
+  padding: 0 0 18px 10px;
+  color: #FFF;
+  font-style: normal;
+  font-size: 28px;
+  font-family: Arial, Baskerville, monospace; }
+  .mfp-close:hover, .mfp-close:focus {
+    opacity: 1;
+    filter: alpha(opacity=100); }
+  .mfp-close:active {
+    top: 1px; }
+
+.mfp-close-btn-in .mfp-close {
+  color: #333; }
+
+.mfp-image-holder .mfp-close, .mfp-iframe-holder .mfp-close {
+  color: #FFF;
+  right: -6px;
+  text-align: right;
+  padding-right: 6px;
+  width: 100%; }
+
+.mfp-counter {
+  position: absolute;
+  top: 0;
+  right: 0;
+  color: #CCC;
+  font-size: 12px;
+  line-height: 18px;
+  white-space: nowrap; }
+
+.mfp-arrow {
+  position: absolute;
+  opacity: 0.65;
+  filter: alpha(opacity=65);
+  margin: 0;
+  top: 50%;
+  margin-top: -55px;
+  padding: 0;
+  width: 90px;
+  height: 110px;
+  -webkit-tap-highlight-color: rgba(0, 0, 0, 0); }
+  .mfp-arrow:active {
+    margin-top: -54px; }
+  .mfp-arrow:hover, .mfp-arrow:focus {
+    opacity: 1;
+    filter: alpha(opacity=100); }
+  .mfp-arrow:before, .mfp-arrow:after, .mfp-arrow .mfp-b, .mfp-arrow .mfp-a {
+    content: '';
+    display: block;
+    width: 0;
+    height: 0;
+    position: absolute;
+    left: 0;
+    top: 0;
+    margin-top: 35px;
+    margin-left: 35px;
+    border: medium inset transparent; }
+  .mfp-arrow:after, .mfp-arrow .mfp-a {
+    border-top-width: 13px;
+    border-bottom-width: 13px;
+    top: 8px; }
+  .mfp-arrow:before, .mfp-arrow .mfp-b {
+    border-top-width: 21px;
+    border-bottom-width: 21px;
+    opacity: 0.7; }
+
+.mfp-arrow-left {
+  left: 0; }
+  .mfp-arrow-left:after, .mfp-arrow-left .mfp-a {
+    border-right: 17px solid #FFF;
+    margin-left: 31px; }
+  .mfp-arrow-left:before, .mfp-arrow-left .mfp-b {
+    margin-left: 25px;
+    border-right: 27px solid #3F3F3F; }
+
+.mfp-arrow-right {
+  right: 0; }
+  .mfp-arrow-right:after, .mfp-arrow-right .mfp-a {
+    border-left: 17px solid #FFF;
+    margin-left: 39px; }
+  .mfp-arrow-right:before, .mfp-arrow-right .mfp-b {
+    border-left: 27px solid #3F3F3F; }
+
+.mfp-iframe-holder {
+  padding-top: 40px;
+  padding-bottom: 40px; }
+  .mfp-iframe-holder .mfp-content {
+    line-height: 0;
+    width: 100%;
+    max-width: 900px; }
+  .mfp-iframe-holder .mfp-close {
+    top: -40px; }
+
+.mfp-iframe-scaler {
+  width: 100%;
+  height: 0;
+  overflow: hidden;
+  padding-top: 56.25%; }
+  .mfp-iframe-scaler iframe {
+    position: absolute;
+    display: block;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    box-shadow: 0 0 8px rgba(0, 0, 0, 0.6);
+    background: #000; }
+
+/* Main image in popup */
+img.mfp-img {
+  width: auto;
+  max-width: 100%;
+  height: auto;
+  display: block;
+  line-height: 0;
+  -webkit-box-sizing: border-box;
+  -moz-box-sizing: border-box;
+  box-sizing: border-box;
+  padding: 40px 0 40px;
+  margin: 0 auto; }
+
+/* The shadow behind the image */
+.mfp-figure {
+  line-height: 0; }
+  .mfp-figure:after {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 40px;
+    bottom: 40px;
+    display: block;
+    right: 0;
+    width: auto;
+    height: auto;
+    z-index: -1;
+    box-shadow: 0 0 8px rgba(0, 0, 0, 0.6);
+    background: #444; }
+  .mfp-figure small {
+    color: #BDBDBD;
+    display: block;
+    font-size: 12px;
+    line-height: 14px; }
+  .mfp-figure figure {
+    margin: 0; }
+
+.mfp-bottom-bar {
+  margin-top: -36px;
+  position: absolute;
+  top: 100%;
+  left: 0;
+  width: 100%;
+  cursor: auto; }
+
+.mfp-title {
+  text-align: left;
+  line-height: 18px;
+  color: #F3F3F3;
+  word-wrap: break-word;
+  padding-right: 36px; }
+
+.mfp-image-holder .mfp-content {
+  max-width: 100%; }
+
+.mfp-gallery .mfp-image-holder .mfp-figure {
+  cursor: pointer; }
+
+@media screen and (max-width: 800px) and (orientation: landscape), screen and (max-height: 300px) {
+  /**
+       * Remove all paddings around the image on small screen
+       */
+  .mfp-img-mobile .mfp-image-holder {
+    padding-left: 0;
+    padding-right: 0; }
+  .mfp-img-mobile img.mfp-img {
+    padding: 0; }
+  .mfp-img-mobile .mfp-figure:after {
+    top: 0;
+    bottom: 0; }
+  .mfp-img-mobile .mfp-figure small {
+    display: inline;
+    margin-left: 5px; }
+  .mfp-img-mobile .mfp-bottom-bar {
+    background: rgba(0, 0, 0, 0.6);
+    bottom: 0;
+    margin: 0;
+    top: auto;
+    padding: 3px 5px;
+    position: fixed;
+    -webkit-box-sizing: border-box;
+    -moz-box-sizing: border-box;
+    box-sizing: border-box; }
+    .mfp-img-mobile .mfp-bottom-bar:empty {
+      padding: 0; }
+  .mfp-img-mobile .mfp-counter {
+    right: 5px;
+    top: 3px; }
+  .mfp-img-mobile .mfp-close {
+    top: 0;
+    right: 0;
+    width: 35px;
+    height: 35px;
+    line-height: 35px;
+    background: rgba(0, 0, 0, 0.6);
+    position: fixed;
+    text-align: center;
+    padding: 0; }
+ }
+
+@media all and (max-width: 900px) {
+  .mfp-arrow {
+    -webkit-transform: scale(0.75);
+    transform: scale(0.75); }
+
+  .mfp-arrow-left {
+    -webkit-transform-origin: 0;
+    transform-origin: 0; }
+
+  .mfp-arrow-right {
+    -webkit-transform-origin: 100%;
+    transform-origin: 100%; }
+
+  .mfp-container {
+    padding-left: 6px;
+    padding-right: 6px; }
+ }
+
+.mfp-ie7 .mfp-img {
+  padding: 0; }
+.mfp-ie7 .mfp-bottom-bar {
+  width: 600px;
+  left: 50%;
+  margin-left: -300px;
+  margin-top: 5px;
+  padding-bottom: 5px; }
+.mfp-ie7 .mfp-container {
+  padding: 0; }
+.mfp-ie7 .mfp-content {
+  padding-top: 44px; }
+.mfp-ie7 .mfp-close {
+  top: 0;
+  right: 0;
+  padding-top: 0; }
+
+
+/*================ Theme-specific partials ================*/
+/*================ Theme specific global styles ================*/
+hr {
+  border-width: $borderWidthHeader 0 0 0;
+  width: 50px;
+}
+
+.hr--small {
+  @extend hr;
+  margin: 20px auto;
+}
+
+.hr--medium {
+  @extend hr;
+  margin: 35px auto;
+
+  @include at-query($min, $large) {
+    margin: 45px auto;
+  }
+}
+
+.hr--large {
+  @extend hr;
+  margin: ($gutter * 2) auto;
+}
+
+.hr--left {
+  margin-left: 0;
+  margin-right: 0;
+}
+
+/*================ Table styles ================*/
+table {
+  position: relative;
+  border: 0 none;
+  background-color: $colorNewsletter;
+}
+
+td,
+th {
+  border: 0 none;
+}
+
+td {
+  padding: 10px 15px;
+}
+
+tr:first-child th,
+tr:first-child td {
+  position: relative;
+
+  &:after {
+    content: '';
+    display: block;
+    position: absolute;
+    bottom: 0;
+    left: -15px;
+    right: 15px;
+    border-bottom: 1px solid $colorBorder;
+  }
+
+  &:first-child:after {
+    left: 15px;
+    right: -15px;
+  }
+}
+
 /*============================================================================
-  Slick Slider 1.6.0
+  Responsive tables, defined with .table--responsive on table element.
+  Only defined for IE9+
+==============================================================================*/
+html:not(.lt-ie9) {
+  .table--responsive {
+    @include at-query($max, $small) {
+      thead {
+        display: none;
+      }
 
-  - If upgrading Slick's styles, use the following variables/functions
-    instead of the slick defaults (from slick-theme.scss)
-  - This file includes default slick.scss styles (at Slick Slider SCSS)
-    and slick-theme.scss (at Slick Slider Theme). Upgrade each area individually.
-  - Remove `outline: none` from `.slick-dots li button`
+      tr {
+        display: block;
+      }
+
+      // IE9 table layout fixes
+      tr,
+      td {
+        float: left;
+        clear: both;
+        width: 100%;
+      }
+
+      th,
+      td {
+        display: block;
+        text-align: right;
+        padding: 15px;
+      }
+
+      td:before {
+        content: attr(data-label);
+        float: left;
+        @include accentFontStack;
+        font-size: 12px;
+        padding-right: 10px;
+      }
+    }
+  }
+
+  @include at-query($max, $small) {
+    .table--small-hide {
+      display: none !important;
+    }
+
+    .table__section + .table__section {
+      position: relative;
+      margin-top: 10px;
+      padding-top: 15px;
+
+      &:after {
+        content: '';
+        display: block;
+        position: absolute;
+        top: 0;
+        left: 15px;
+        right: 15px;
+        border-bottom: 1px solid $colorBorder;
+      }
+    }
+  }
+}
+
+/*================ Partials | Theme typography overrides ================*/
+body,
+input,
+textarea,
+button,
+select {
+  line-height: 1.563; // 25px based on 16px font
+}
+
+h1 {
+  font-size: em($headerBaseFontSize);
+}
+
+h2 {
+  @include accentFontStack;
+  font-size: em(floor($headerBaseFontSize * 0.93)); //26px
+}
+
+h3 {
+  @include accentFontStack;
+  font-size: em(floor($headerBaseFontSize * 0.63)); //18px
+}
+
+h4 {
+  @include accentFontStack;
+  font-size: em(floor($headerBaseFontSize * 0.54)); //15px
+}
+
+h5,
+h6 {
+  font-size: em(floor($headerBaseFontSize * 0.5)); //14px
+}
+
+.h1 { @extend h1; }
+.h2 { @extend h2; }
+.h3 { @extend h3; }
+.h4 { @extend h4; }
+.h5 { @extend h5; }
+.h6 { @extend h6; }
+
+/*================ Tables ================*/
+th,
+.table__title {
+  @include accentFontStack;
+  font-weight: normal;
+  font-size: em(13px);
+  letter-spacing: 0.15em;
+}
+
+/*================ Rich Text Editor Styles ================*/
+.rte {
+  h1 {
+    @include accentFontStack;
+    font-size: em(22px);
+    text-align: center;
+  }
+
+  h2 {
+    font-size: em(17px);
+    text-align: center;
+  }
+
+  h3 {
+    font-size: em(15px);
+    text-align: center;
+  }
+}
+
+blockquote {
+  @include bodyFontItalic;
+  font-size: em(23px);
+  line-height: 1.385;
+  text-align: center;
+
+  @include at-query($min, $postSmall) {
+    font-size: em(26px);
+  }
+}
+
+.section-header .rte {
+  @include bodyFontItalic;
+  font-size: em(18px);
+}
+
+/*================ Blog and Page Typography ================*/
+.article .rte,
+.page .rte {
+  h2,
+  h3 {
+    margin-bottom: 2em;
+  }
+}
+
+/*================ Blog Typography ================*/
+.date {
+  @include bodyFontItalic;
+  display: inline-block;
+  line-height: 1.7;
+  margin-bottom: 5px;
+
+  @include at-query($min, $large) {
+    margin-bottom: 0;
+  }
+
+  .section-header &:last-child {
+    margin-bottom: 40px;
+  }
+}
+
+.comment-author {
+  @include bodyFontItalic;
+  margin-bottom: 0;
+}
+
+.comment-date {
+  @include accentFontStack;
+  font-size: em(12px);
+}
+
+/*================ Cart Typography ================*/
+.ajaxcart__product-name,
+.cart__product-name {
+  @include bodyFontItalic;
+}
+
+.ajaxcart__product-name {
+  font-size: em(17px);
+  line-height: 1.3;
+}
+
+.ajaxcart__price,
+.cart__price,
+.cart__subtotal {
+  @include accentFontStack;
+}
+
+.ajaxcart__price {
+  font-size: em(13px);
+}
+
+.ajaxcart__price--strikethrough,
+.cart__price--strikethrough {
+  text-decoration: line-through;
+}
+
+.ajaxcart__discount,
+.cart__discount {
+  display: block;
+  @include bodyFontItalic;
+}
+
+.ajaxcart__subtotal {
+  @include accentFontStack;
+}
+
+.ajaxcart__qty-num[type="text"] {
+  @include accentFontStack;
+  font-style: normal;
+  font-size: em(13px);
+}
+
+.ajaxcart__note {
+  @include bodyFontItalic;
+  font-weight: normal;
+  opacity: 0.7;
+}
+
+.ajaxcart__savings,
+.cart__savings {
+  @include bodyFontItalic;
+  font-size: em(20px);
+}
+
+/*================ Misc typography ================*/
+.drawer__title {
+  @include headerFontStack;
+  font-size: em(24px);
+}
+
+.collection-grid__item-title {
+  @include bodyFontItalic;
+  font-size: em(26px);
+  line-height: 1.1;
+
+  @include at-query($min, $postSmall) {
+    font-size: em(34px);
+  }
+}
+
+/*================ Partials | Theme Form Overrides ================*/
+label {
+  @include bodyFontItalic;
+  font-weight: normal;
+}
+
+::-webkit-input-placeholder {
+   color: $colorTextBody;
+   opacity: 0.6;
+}
+
+:-moz-placeholder {
+   color: $colorTextBody;
+   opacity: 0.6;
+}
+
+:-ms-input-placeholder {
+   color: $colorTextBody;
+   opacity: 0.6;
+}
+
+::-ms-input-placeholder {
+   color: $colorTextBody;
+   opacity: 1;
+}
+
+input,
+textarea,
+select {
+  @include bodyFontItalic;
+  font-size: em(18px);
+  border-color: transparent;
+  background-color: $colorInputBg;
+  color: color-control($colorInputBg);
+  @include transition(opacity 0.4s ease-out);
+
+  &[disabled],
+  &.disabled {
+    background-color: $disabledGrey;
+    border-color: transparent;
+  }
+
+  &:hover {
+    @include transition(opacity 0.15s ease-out);
+    opacity: 0.9;
+  }
+
+  &:active,
+  &:focus {
+    opacity: 1;
+  }
+}
+
+select:hover {
+  outline: 1px solid darken($colorInputBg, 10%);
+}
+
+input[type="number"] {
+  @include accentFontStack;
+  font-size: em(16px);
+}
+
+input[type="image"] {
+  background-color: transparent;
+}
+
+/*================ Ajax quantity selectors ================*/
+.js-qty {
+  background-color: $colorInputBg;
+  color: color-control($colorInputBg);
+}
+
+.js-qty__adjust {
+  &:hover {
+    background-color: darken($colorInputBg, 5%);
+    color: color-control($colorInputBg);
+  }
+}
+
+.js-qty__adjust--minus,
+.js-qty__adjust--plus {
+  border-color: darken($colorInputBg, 5%);
+  color: color-control($colorInputBg);
+}
+
+/*================ Newsletter area ================*/
+.newsletter {
+  background-color: $colorNewsletter;
+  padding: $gutter 0;
+  margin-top: $gutter * 2;
+
+  .shopify-section:first-child & {
+    margin-top: -($gutter * 2);
+    @include at-query($min, $postSmall) {
+      margin-bottom: -($gutter * 2);
+      position: relative;
+      top: -($gutter * 5 / 3);
+    }
+  }
+
+  @include at-query($min, $postSmall) {
+    padding: ($gutter * 2) 0;
+  }
+
+  .section-header + .section-subheading {
+    margin-top: -30px;
+    margin-bottom: 30px;
+
+    @include at-query($min, $postSmall) {
+      margin-top: -50px;
+      margin-bottom: 50px;
+    }
+  }
+
+  form {
+    margin: 0 auto;
+    max-width: 520px;
+
+    .newsletter--form {
+      padding: $gutter / 3;
+    }
+    .note, .errors {
+      margin-bottom: 0;
+    }
+  }
+
+  form .newsletter--form,
+  .newsletter__input {
+    background-color: $colorBody;
+    color: $colorTextBody;
+  }
+
+  .newsletter__input {
+    font-size: em(18px);
+    -moz-appearance: textfield;
+    -webkit-appearance: textfield;
+    appearance: textfield;
+
+    &::-webkit-input-placeholder { /* WebKit browsers */
+      color: $colorTextBody;
+      opacity: 1;
+    }
+
+    &:-moz-placeholder { /* Mozilla Firefox 4 to 18 */
+      color: $colorTextBody;
+      opacity: 1;
+    }
+
+    &::-moz-placeholder { /* Mozilla Firefox 19+ */
+      color: $colorTextBody;
+      opacity: 1;
+    }
+
+    &:-ms-input-placeholder { /* Internet Explorer 10+ */
+      color: $colorTextBody;
+    }
+
+    &::-ms-input-placeholder { /* Microsoft Edge 12+ */
+      color: $colorTextBody;
+      opacity: 1;
+    }
+
+    @include at-query($min, $postSmall) {
+      font-size: em(21px);
+    }
+  }
+
+  .newsletter__submit-text--large {
+    white-space: nowrap;
+  }
+}
+
+@include at-query($max, $small) {
+  .newsletter__submit-text--large,
+  .password-page__login-form__submit-text--large {
+    display: none;
+  }
+
+  .newsletter__submit-text--small,
+  .password-page__login-form__submit-text--small {
+    display: block;
+  }
+}
+
+@include at-query($min, $postSmall) {
+  .newsletter__submit-text--large,
+  .password-page__login-form__submit-text--large {
+    display: block;
+  }
+
+  .newsletter__submit-text--small,
+  .password-page__login-form__submit-text--small {
+    display: none;
+  }
+}
+
+.newsletter__label {
+  padding-left: 10px;
+}
+
+/*================ Modules | Theme product collage grid ================*/
+.grid__row-separator {
+  clear: both;
+  width: 100%;
+}
+
+//overrides for IE8 for non-collage grid
+.lt-ie9 .grid-uniform .grid-product {
+  display: inline-block;
+  margin-left: -4px;
+  float: none;
+}
+
+.grid-collage {
+  margin-bottom: -13px; // matches bottom padding of .grid-product__meta
+}
+
+@include at-query($max, $small) {
+  .grid-collage {
+    .grid-product__image-link {
+      height: $collageImageMedium;
+    }
+  }
+}
+
+.grid-collage .grid-product__image-link {
+  vertical-align: middle;
+  display: table-cell;
+}
+
+@include at-query($min, $postSmall) {
+  .large--two-thirds.reverse {
+    float: right;
+  }
+
+  .grid-collage {
+    .large--two-thirds {
+      clear: both;
+
+      &.reverse {
+        clear: none;
+      }
+    }
+
+    // specificity necessary to override timber defaults
+    .grid__item.large--one-third {
+      clear: none;
+    }
+
+    .large--one-half {
+      float: left;
+      display: inline-block;
+    }
+  }
+
+  .grid-collage .large--one-third {
+    clear: inherit;
+  }
+
+  .grid-collage .grid-product__image-link {
+    height: $collageImageXLarge;
+  }
+
+  .grid-collage .large--one-half .grid-product__image-link {
+    height: $collageImageMedium;
+  }
+
+  .grid-collage .large--two-thirds .grid-product__image-link {
+    height: $collageImageLarge;
+  }
+
+  .grid-collage .large--one-third .grid-product__image-link {
+    height: $collageImageSmall;
+  }
+
+}
+
+/*================ Modules | Theme collection collage grid ================*/
+.collection-grid {
+  margin-bottom: -($gutter / 2);
+
+  @include at-query($min, $postSmall) {
+    margin-bottom: -$gutter;
+  }
+}
+
+.collection-collage__item {
+  position: relative;
+  margin-bottom: $gutter / 2;
+  height: $collectionCollageRowHeightFull;
+
+  @include at-query($max, $small) {
+    // calculate height for single item rows for
+    // mobile breakpoint only
+    &.one-whole {
+      height: $collectionCollageRowHeightLarge - 120px;
+    }
+
+    // calculate height for single item rows
+    // mobile breakpoint only
+    &.one-half {
+      height: $collectionCollageRowHeightSmall - 150px;
+    }
+  }
+
+  @include at-query($min, $postSmall) {
+    margin-bottom: $gutter;
+  }
+}
+
+@include at-query($min, $postSmall) {
+  .collection-collage__item {
+    &.large--one-half {
+      height: $collectionCollageRowHeightLarge;
+    }
+
+    &.large--one-third {
+      height: $collectionCollageRowHeightSmall;
+    }
+  }
+}
+
+/*================ Partials | Theme button overrides ================*/
+a {
+  color: $colorTextBody;
+  text-decoration: none;
+  background: transparent;
+
+  &:hover {
+    color: $colorTextBody;
+  }
+}
+
+.rte a,
+.text-link {
+  color: $colorLink;
+
+  &:hover {
+    color: $colorLinkHover;
+  }
+}
+
+.return-link {
+  @include accentFontStack;
+  font-size: em(14px);
+}
+
+/*================ Buttons and Input Groups ================*/
+.btn,
+.btn--secondary {
+  @include accentFontStack;
+  padding: 12px 20px;
+  font-size: em(13px);
+}
+
+.input-group .btn,
+.input-group .btn--secondary,
+.input-group .input-group-field {
+  height: 45px;
+}
+
+/*================ Button loading indicator, when supported ================*/
+.supports-csstransforms .btn--loading {
+  position: relative;
+
+  background-color: darken($colorBtnPrimary, 5%);
+  color: darken($colorBtnPrimary, 5%);
+
+  &:hover,
+  &:active {
+    background-color: darken($colorBtnPrimary, 5%);
+    color: darken($colorBtnPrimary, 5%);
+  }
+
+  &:after {
+    content: '';
+    display: block;
+    width: 24px;
+    height: 24px;
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    margin-left: -12px;
+    margin-top: -12px;
+    border-radius: 50%;
+    border: 3px solid $colorBtnPrimaryText;
+    border-top-color: transparent;
+    @include animation(spin 1s infinite linear);
+  }
+}
+
+/*================ Partials | Theme drawer overrides ================*/
+
+/*================ Override drawer scrolling to accommodate fixed header/footers ================*/
+.drawer {
+  overflow: hidden;
+}
+
+.drawer__inner {
+  position: absolute;
+  top: $drawerHeaderHeight;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: ($gutter / 2) ($gutter / 2) 0;
+  overflow: auto;
+  -webkit-overflow-scrolling: touch;
+
+  @include at-query($min, $large) {
+    padding-left: $gutter;
+    padding-right: $gutter;
+  }
+
+  .drawer--has-fixed-footer & {
+    overflow: hidden;
+  }
+}
+
+/*================ Drawer Fixed Headers ================*/
+.drawer__fixed-header {
+  position: absolute;
+  top: 0;
+  left: $gutter / 2;
+  right: $gutter / 2;
+  height: $drawerHeaderHeight;
+  overflow: visible; // for close button hit area
+
+  @include at-query($min, $large) {
+    left: $gutter;
+    right: $gutter;
+  }
+}
+
+.drawer__header {
+  padding: ($gutter / 2) 0;
+  margin: 0;
+}
+
+@include at-query($max, $medium) {
+  .drawer__close-button {
+    .icon {
+      font-size: em(22px);
+    }
+  }
+}
+
+@include at-query($min, $postSmall) {
+  .drawer__close-button {
+    right: 0;
+  }
+}
+
+
+@include at-query($min, $xlarge) {
+  .drawer__close-button {
+    right: -20px;
+  }
+}
+
+/*================ Drawer Fixed Cart Footer ================*/
+.ajaxcart__inner--has-fixed-footer {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  margin: 0;
+  padding: ($gutter / 2) ($gutter / 2) 0;
+  bottom: $drawerCartFooterHeight; // overwritten with JS
+  overflow: auto;
+  -webkit-overflow-scrolling: touch;
+
+  @include at-query($min, $large) {
+    padding: $gutter $gutter 0;
+  }
+}
+
+.ajaxcart__footer {
+  border-top: 1px solid $colorDrawerBorder;
+  padding-top: $gutter / 2;
+}
+
+.ajaxcart__footer--fixed {
+  position: absolute;
+  bottom: 0;
+  left: $gutter / 2;
+  right: $gutter / 2;
+  min-height: $drawerCartFooterHeight; // overwritten by JS
+  padding-bottom: $gutter;
+
+  @include at-query ($max, $small) {
+    padding-bottom: $gutter /2;
+  }
+
+  @include at-query($min, $large) {
+    left: $gutter;
+    right: $gutter;
+  }
+}
+
+/*================ Drawer Quantity Selectors ================*/
+.ajaxcart__qty {
+  max-width: 75px;
+
+  input[type="text"] {
+    padding: 0 20px;
+  }
+
+  .js-qty__adjust,
+  .ajaxcart__qty-adjust {
+    padding: 0 5px;
+    line-height: 1;
+  }
+}
+
+/*================ Cart item styles ================*/
+.ajaxcart__product:last-child .ajaxcart__row {
+  border-bottom: 0 none;
+  padding-bottom: 0;
+}
+
+.btn--secondary {
+  @include transition(all 0.2s ease-out);
+
+  &:hover {
+    background-color: adaptive-color($colorDrawerButton, 10%);
+  }
+}
+
+/*============================================================================
+  Social Icon Buttons v1.0
+  Author:
+    Carson Shold | @cshold
+    http://www.carsonshold.com
+  MIT License
+==============================================================================*/
+
+/*================ Social share buttons ================*/
+$shareButtonHeight: 22px;
+$shareButtonCleanHeight: 30px;
+$shareCountBg: $colorBody;
+
+.social-sharing {
+  font-family: $bodyFontStack;
+
+  * {
+    -webkit-box-sizing:border-box;
+    -moz-box-sizing:border-box;
+    box-sizing:border-box;
+  }
+
+  a {
+    display: inline-block;
+    color: $colorTextBody;
+    border-radius: 2px;
+    margin: 5px 0;
+    height: $shareButtonHeight;
+    line-height: $shareButtonHeight;
+    text-decoration: none;
+    font-weight: normal;
+  }
+
+  span {
+    display: inline-block;
+    vertical-align: top;
+    height: $shareButtonHeight;
+    line-height: $shareButtonHeight;
+    font-size: 12px;
+  }
+
+  .icon {
+    padding: 0 5px 0 10px;
+
+    &:before {
+      line-height: $shareButtonHeight;
+    }
+  }
+
+  /*================ Large Buttons ================*/
+  &.is-large a {
+    height: $shareButtonHeight*2;
+    line-height: $shareButtonHeight*2;
+
+    span {
+      height: $shareButtonHeight*2;
+      line-height: $shareButtonHeight*2;
+      font-size: 18px;
+    }
+
+    .icon {
+      padding: 0 10px 0 18px;
+
+      &:before {
+        line-height: $shareButtonHeight*2;
+      }
+    }
+  }
+}
+
+.share-title {
+  font-size: em(18px);
+  padding-right: 10px;
+
+  .is-large & {
+    padding-right: 16px;
+  }
+}
+
+/*================ Clean Buttons ================*/
+.social-sharing.clean {
+  a {
+    background-color: $shareCountBg;
+    color: $colorTextBody;
+    height: $shareButtonCleanHeight;
+    line-height: $shareButtonCleanHeight;
+
+    span {
+      height: $shareButtonCleanHeight;
+      line-height: $shareButtonCleanHeight;
+      font-size: 13px;
+    }
+
+    &:hover {
+      opacity: 0.8;
+    }
+
+    &:hover .share-count {
+      opacity: 0.8;
+
+      &:after {
+        border-right-color: $shareCountBg;
+      }
+    }
+
+    .share-title {
+      font-weight: normal;
+    }
+  }
+
+  .share-count {
+    top: -1px;
+  }
+}
+
+/*================ Partials | Theme search grid ================*/
+
+//overrides for IE8 for non-collage grid
+.lt-ie9 .grid-uniform .grid-search {
+  display: inline-block;
+  margin-left: -4px;
+  float: none;
+}
+
+.grid-search {
+  margin-bottom: $gutter;
+}
+
+.grid-search__product {
+  position: relative;
+  text-align: center;
+}
+
+// Force heights for consistency
+.grid-search__page-link,
+.grid-search__product-link {
+  @include at-query($min, $large) {
+    height: 280px;
+  }
+}
+
+.grid-search__page-link {
+  display: block;
+  background-color: $colorProductBackground;
+  padding: 20px;
+  color: $colorTextBody;
+  overflow: hidden;
+
+  &:hover,
+  &:focus {
+    background-color: adaptive-color($colorProductBackground, 3%);
+  }
+}
+
+.grid-search__page-content {
+  display: block;
+  height: 100%;
+  overflow: hidden;
+}
+
+.grid-search__image {
+  display: block;
+  padding: 20px;
+  margin: 0 auto;
+  max-height: 100%;
+  max-width: 100%;
+
+  @include at-query($min, $large) {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    @include prefix('transform', 'translate(-50%, -50%)');
+
+    .lt-ie9 {
+      position: static;
+      @include prefix('transform', 'translate(0, 0)');
+    }
+  }
+}
+
+/*================ Partials | Sections ================*/
+.index-sections {
+  .shopify-section:first-child {
+    margin: 0;
+  }
+
+  .shopify-section {
+    margin-top: $gutter * 3;
+
+    @include at-query($max, $medium) {
+      margin-top: $gutter * 1.5;
+    }
+  }
+}
+
+/*================ Partials | Sections onboarding ================*/
+.placeholder-svg {
+  fill: $color-blankstate;
+  background-color: $color-blankstate-background;
+  width: 100%;
+  height: 100%;
+  max-width: 100%;
+  max-height: 100%;
+}
+
+.placeholder-background {
+  background-color: $color-blankstate-background;
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+
+  .hero & {
+    background-color: transparent;
+  }
+
+  .placeholder-svg {
+    fill: $color-blankstate-background;
+    background-color: transparent;
+  }
+}
+
+.hero__slide {
+  &.slide--placeholder {
+    background-color: $color-blankstate-background !important;
+  }
+}
+
+/*================ Partials | Featured products section onboarding ================*/
+.grid-product__image-link {
+  .helper-section &,
+  .helper & {
+    background-color: transparent;
+  }
+}
+
+.grid-product__image-wrapper {
+  .helper-section & {
+    height: 275px !important;
+  }
+}
+
+/*================ Partials | Featured row section ================*/
+.feature-row {
+  @include display-flexbox();
+  @include justify-content(space-between);
+  @include align-items(center);
+
+  @include at-query($max, $medium) {
+    @include flex-wrap(wrap);
+  }
+}
+
+.feature-row__item {
+  @include flex(0 1 50%);
+
+  @include at-query($max, $medium) {
+    @include flex(1 1 100%);
+    max-width: 100%;
+  }
+}
+
+.feature-row__image-wrapper {
+  position: relative;
+
+  .no-js & {
+    @include visuallyHidden();
+    padding-top: 0 !important;
+  }
+}
+
+.feature-row__image-no-js {
+  display: block;
+  margin: 0 auto;
+
+  @include at-query($max, $medium) {
+    order: 1;
+  }
+}
+
+.feature-row__image {
+  display: block;
+  margin: 0 auto;
+  width: 100%;
+  position: absolute;
+  top: 0;
+  right: 0;
+  left: 0;
+
+  @include at-query($max, $medium) {
+    order: 1;
+  }
+}
+
+.feature-row__text {
+  padding-top: $section-spacing-small;
+  padding-bottom: $section-spacing-small;
+
+  @include at-query($max, $medium) {
+    order: 2;
+    padding-bottom: 0; // always last element on mobile
+  }
+}
+
+@include at-query($min, $large) {
+  .feature-row__text--left {
+    padding-left: $section-spacing-small;
+  }
+
+  .feature-row__text--right {
+    padding-right: $section-spacing-small;
+  }
+}
+
+@include at-query($min, $large) {
+  .featured-row__subtext {
+  }
+}
+
+
+/*================ Module-specific styles ================*/
+/*============================================================================
+  To update Slick slider to a new version,
+  scroll down to #Slick Slider SCSS and follow the instructions
+
+  Default Slick classes all start with '.slick'
+  Custom classes all start with '.hero'
+
+  Extra specificity in selectors is used to override default
+  styles before including the default Slick CSS
+==============================================================================*/
+
+/*================ Prev/next and pagination ================*/
+.slick-slider .slick-dots {
+  margin: 0;
+  bottom: 10px;
+
+  li {
+    margin: 0;
+    vertical-align: middle;
+
+    button {
+      position: relative;
+    }
+
+    button:before {
+      text-indent: -9999px;
+      background-color: #fff;
+      border-radius: 100%;
+      border: 2px solid transparent;
+      width: 10px;
+      height: 10px;
+      margin: 5px 0 0 5px;
+      opacity: 1;
+      @include transition(all 0.2s);
+    }
+
+    &.slick-active button:before {
+      background-color: transparent;
+      border-color: #fff;
+      opacity: 1;
+      width: 12px;
+      height: 12px;
+      margin: 4px 0 0 4px;
+    }
+
+    button:active:before {
+      opacity: 0.5;
+    }
+  }
+
+  &.is-dark {
+    li button:before {
+      background-color: #000;
+    }
+
+    & li.slick-active button:before {
+      border-color: #000;
+      background-color: transparent;
+    }
+  }
+}
+
+.hero {
+  .slick-prev,
+  .slick-next {
+    top: 0;
+    height: 100%;
+    margin-top: 0;
+    width: 40px;
+  }
+
+  .slick-prev {
+    left: 0;
+  }
+
+  .slick-next {
+    right: 0;
+  }
+}
+
+/*================ Slide colors ================*/
+.hero__slide {
+  &.is-light {
+    color: #fff;
+    background-color: #fff;
+
+    a.hero__cta {
+      color: #000;
+      background-color: #fff;
+    }
+  }
+
+  &.is-dark {
+    color: #000;
+    background-color: #fff;
+
+    a.hero__cta {
+      color: #fff;
+      background-color: #000;
+    }
+  }
+}
+
+/*============================================================================
+  General slide styles
+    - Sizes based on height of image when 100% of container width
+==============================================================================*/
+.hero__slide {
+  position: relative;
+}
+
+.hero__image {
+  position: relative;
+  opacity: 0;
+
+  .slick-initialized & {
+    opacity: 1;
+    @include animation(fadeIn 1s cubic-bezier(0.44, 0.13, 0.48, 0.87));
+  }
+
+  img {
+    display: block;
+    width: 100%;
+  }
+}
+
+.hero__slide--hidden {
+  visibility: hidden;
+}
+
+.supports-touch .hero__slide--hidden {
+  visibility: visible;
+}
+
+// z-index stacking issues in oldIE
+.ie9,
+.lt-ie9 {
+  .hero__slide {
+    z-index: 1!important;
+  }
+
+  .slick-dots {
+    z-index: 2;
+  }
+}
+
+/*============================================================================
+  Full screen hero styles
+    - Uses css background image
+==============================================================================*/
+.hero--full-height {
+  // Height is set by JS on slider init. vh is a nice default for modern browsers.
+  height: 100vh;
+  min-height: 550px;
+
+  .slick-list,
+  .slick-track {
+    height: 100%;
+  }
+
+  .hero__image {
+    height: 100%;
+    width: 100%;
+    object-fit: cover;
+    // Used for the IE lazysizes object-fit polyfill
+    font-family: "object-fit: cover";
+
+    .lt-ie9 & {
+      background-position: center center;
+    }
+  }
+}
+
+.hero__image {
+  .no-js & {
+    @include visuallyHidden;
+  }
+}
+
+.hero__image-no-js {
+  background-repeat: no-repeat;
+  background-size: cover;
+  background-position: top center;
+  height: 100vh;
+  min-height: 550px;
+  opacity: 1;
+}
+
+/*================ Hero text/CTA ================*/
+.hero__text-wrap {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  text-align: center;
+}
+
+.hero__text-align {
+  display: table;
+  width: 100%;
+  height: 100%;
+}
+
+.hero__text-content {
+  opacity: 0;
+  display: table-cell;
+  vertical-align: middle;
+  padding: 15px 30px 0;
+  @include transition('color 0.2s ease');
+
+  .slick-initialized & {
+    opacity: 1;
+    @include animation(heroContentIn 1s cubic-bezier(0.44, 0.13, 0.48, 0.87));
+  }
+
+  @include at-query($min, $large) {
+    padding: 15px 150px;
+  }
+}
+
+.hero__text-content .slick-dots {
+  position: static;
+}
+
+/*================ Extra specificity to override Timber defaults ================*/
+.hero__slide {
+  .hero__title {
+    margin-bottom: 20px;
+    line-height: 1.25;
+    letter-spacing: 0;
+    text-transform: capitalize;
+  }
+
+  .hero__subtitle {
+    @include accentFontStack;
+    margin-bottom: 15px;
+  }
+
+  a.hero__cta {
+    margin-bottom: 0;
+  }
+}
+
+/*================ Font sizes ================*/
+.hero__slide {
+  .hero__title {
+    font-size: em(50px);
+  }
+
+  .hero__subtitle {
+    font-size: em(15px);
+  }
+
+  @include at-query($min, $postSmall) {
+    .hero__title {
+      font-size: em(60px);
+    }
+
+    .hero__subtitle {
+      font-size: em(18px);
+    }
+  }
+
+  @include at-query($min, $large) {
+    .hero__title {
+      font-size: em(64px);
+    }
+  }
+}
+
+/*================ Hero header ================*/
+.hero__header {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  opacity: 0;
+  z-index: $zindexHeroHeader;
+}
+
+.template-index .header-wrapper {
+  opacity: 0;
+  z-index: $zindexHeroHeader;
+  @include animation(fadeIn 0.8s cubic-bezier(0.44, 0.13, 0.48, 0.87) forwards);
+
+  .supports-no-cssanimations & {
+    opacity: 1;
+    @include animation(fadeIn 0.8s cubic-bezier(0.44, 0.13, 0.48, 0.87));
+  }
+}
+
+.header-container {
+  position: relative;
+  z-index: $zindexHeroHeader;
+}
+
+.header-wrapper--over-hero {
+  position: relative;
+}
+
+/*============================================================================
+  #Slick Slider overrides
+    - If upgrading Slick's styles, use the following variables/functions
+      instead of the slick defaults
+    - Only overwrite slick's default styles starting at #Slick Slider SCSS
 ==============================================================================*/
 $slick-font-family: "slick-icons, sans-serif";
-$slick-arrow-color: $color-slideshow-arrows;
-$slick-dot-color: $color-slideshow-dots;
-$slick-dot-color-active: $slick-dot-color !default;
+$slick-arrow-color: $colorPrimary;
+$slick-dot-color: $colorPrimary;
+$slick-dot-color-active: $slick-dot-color;
 $slick-prev-character: '\2190';
 $slick-next-character: '\2192';
 $slick-dot-character: '\2022';
@@ -469,11 +2334,17 @@ $slick-opacity-not-active: 0.25;
 // Unused intentionally
 @function slick-font-url($url) {}
 
-/*================ Slick Slider SCSS ================*/
+/*============================================================================
+  #Slick Slider SCSS
+    - Everything below this line is unchanged from Slick's scss file
+    - When updating to a new version, don't include the variables/function
+      that were modified above
+==============================================================================*/
 .slick-slider {
   position: relative;
   display: block;
   box-sizing: border-box;
+  -moz-box-sizing: border-box;
   -webkit-touch-callout: none;
   -webkit-user-select: none;
   -khtml-user-select: none;
@@ -493,6 +2364,10 @@ $slick-opacity-not-active: 0.25;
 
   &:focus {
     outline: none;
+  }
+
+  .slick-loading & {
+    background: #fff slick-image-url("ajax-loader.gif") center center no-repeat;
   }
 
   &.dragging {
@@ -563,23 +2438,16 @@ $slick-opacity-not-active: 0.25;
     border: 1px solid transparent;
   }
 }
-.slick-arrow.slick-hidden {
-  display: none;
-}
-
-/*================ Slick Slider Theme ================*/
-.slick-list {
-  .slick-loading & {
-    background: #fff slick-image-url("ajax-loader.gif") center center no-repeat;
-  }
-}
 
 /* Icons */
 @if $slick-font-family == "slick" {
   @font-face {
-    font-family: "slick";
-    src: slick-font-url("slick.eot");
-    src: slick-font-url("slick.eot?#iefix") format("embedded-opentype"), slick-font-url("slick.woff") format("woff"), slick-font-url("slick.ttf") format("truetype"), slick-font-url("slick.svg#slick") format("svg");
+    font-family:"slick";
+    src:  slick-font-url("slick.eot");
+    src:  slick-font-url("slick.eot?#iefix") format("embedded-opentype"),
+        slick-font-url("slick.woff") format("woff"),
+        slick-font-url("slick.ttf") format("truetype"),
+        slick-font-url("slick.svg#slick") format("svg");
     font-weight: normal;
     font-style: normal;
   }
@@ -593,42 +2461,41 @@ $slick-opacity-not-active: 0.25;
   display: block;
   height: 20px;
   width: 20px;
-  line-height: 0px;
-  font-size: 0px;
+  line-height: 0;
+  font-size: 0;
   cursor: pointer;
   background: transparent;
   color: transparent;
   top: 50%;
-  -webkit-transform: translate(0, -50%);
-  -ms-transform: translate(0, -50%);
-  transform: translate(0, -50%);
+  margin-top: -10px;
   padding: 0;
   border: none;
+  outline: none;
   &:hover, &:focus {
+    outline: none;
     background: transparent;
     color: transparent;
     &:before {
-      opacity: $slick-opacity-on-hover;
+    opacity: $slick-opacity-on-hover;
     }
   }
   &.slick-disabled:before {
     opacity: $slick-opacity-not-active;
   }
-  &:before {
-    font-family: $slick-font-family;
-    font-size: 20px;
-    line-height: 1;
-    color: $slick-arrow-color;
-    opacity: $slick-opacity-default;
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
-  }
 }
-
+.slick-prev:before, .slick-next:before {
+  font-family: $slick-font-family;
+  font-size: 20px;
+  line-height: 1;
+  color: $slick-arrow-color;
+  opacity: $slick-opacity-default;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
 .slick-prev {
   left: -25px;
   [dir="rtl"] & {
-    left: auto;
+    left:  auto;
     right: -25px;
   }
   &:before {
@@ -638,11 +2505,10 @@ $slick-opacity-not-active: 0.25;
     }
   }
 }
-
 .slick-next {
   right: -25px;
   [dir="rtl"] & {
-    left: -25px;
+    left:  -25px;
     right: auto;
   }
   &:before {
@@ -655,19 +2521,18 @@ $slick-opacity-not-active: 0.25;
 
 /* Dots */
 
-.slick-dotted.slick-slider {
+.slick-slider {
   margin-bottom: 30px;
 }
-
 .slick-dots {
   position: absolute;
-  bottom: -25px;
+  bottom: -45px;
   list-style: none;
   display: block;
   text-align: center;
   padding: 0;
-  margin: 0;
   width: 100%;
+
   li {
     position: relative;
     display: inline-block;
@@ -676,22 +2541,26 @@ $slick-opacity-not-active: 0.25;
     margin: 0 5px;
     padding: 0;
     cursor: pointer;
+
     button {
       border: 0;
       background: transparent;
       display: block;
       height: 20px;
       width: 20px;
-      line-height: 0px;
-      font-size: 0px;
+      outline: none;
+      line-height: 0;
+      font-size: 0;
       color: transparent;
       padding: 5px;
       cursor: pointer;
       &:hover, &:focus {
+        outline: none;
         &:before {
           opacity: $slick-opacity-on-hover;
         }
       }
+
       &:before {
         position: absolute;
         top: 0;
@@ -708,7 +2577,9 @@ $slick-opacity-not-active: 0.25;
         -webkit-font-smoothing: antialiased;
         -moz-osx-font-smoothing: grayscale;
       }
+
     }
+
     &.slick-active button:before {
       color: $slick-dot-color-active;
       opacity: $slick-opacity-default;
@@ -716,4853 +2587,847 @@ $slick-opacity-not-active: 0.25;
   }
 }
 
+/*================ Module | Collection images at top of templates ================*/
+.collection-hero {
+  margin-top: -$contentTopMarginSmall;
+  margin-bottom: $contentTopMarginSmall;
+  overflow: hidden;
 
-/*================ GLOBAL ================*/
-/*============================================================================
-  #Normalize
-  Based on normalize.css v3.0.2 | MIT License | git.io/normalize
-==============================================================================*/
-*,
-*::before,
-*::after {
-  box-sizing: border-box;
+  @include at-query($min, $large) {
+    margin-top: -$contentTopMargin + ($gutter / 2);
+    margin-bottom: $contentTopMargin;
+  }
+
+  @include at-query($max, $medium) {
+    margin-bottom: $gutter * 2;
+  }
 }
 
-body {
-  margin: 0;
-}
-
-article,
-aside,
-details,
-figcaption,
-figure,
-footer,
-header,
-hgroup,
-main,
-menu,
-nav,
-section,
-summary {
-  display: block;
-}
-
-body,
-input,
-textarea,
-button,
-select {
-  -webkit-font-smoothing: antialiased;
-  -webkit-text-size-adjust: 100%;
-}
-
-a {
-  background-color: transparent;
-}
-
-b,
-strong {
-  font-weight: $font-weight-bold;
-}
-
-em {
-  font-style: italic;
-}
-
-
-small {
-  font-size: 80%;
-}
-
-sub,
-sup {
-  font-size: 75%;
-  line-height: 0;
+.collection-hero__image-wrapper {
   position: relative;
-  vertical-align: baseline;
-}
-
-sup {
-  top: -0.5em;
-}
-
-sub {
-  bottom: -0.25em;
-}
-
-img {
-  max-width: 100%;
-  border: 0;
-}
-
-button,
-input,
-optgroup,
-select,
-textarea {
-  color: inherit;
-  font: inherit;
-  margin: 0;
-}
-
-button,
-html input {
-  &[disabled] {
-    cursor: default;
-  }
-}
-
-button::-moz-focus-inner,
-[type="button"]::-moz-focus-inner,
-[type="reset"]::-moz-focus-inner,
-[type="submit"]::-moz-focus-inner {
-  border-style: none;
-  padding: 0;
-}
-
-button:-moz-focusring,
-[type="button"]:-moz-focusring,
-[type="reset"]:-moz-focusring,
-[type="submit"]:-moz-focusring {
-  outline: 1px dotted ButtonText;
-}
-
-input {
-  &[type="search"],
-  &[type="number"],
-  &[type="email"],
-  &[type="password"] {
-    -webkit-appearance: none;
-    -moz-appearance: none;
-  }
-}
-
-table {
-  width: 100%;
-  border-collapse: collapse;
-  border-spacing: 0;
-}
-
-td,
-th {
-  padding: 0;
-}
-
-textarea {
-  overflow: auto;
-  -webkit-appearance: none;
-  -moz-appearance: none;
-}
-
-// hide outline on focus for elements which are given focus by JS
-[tabindex='-1']:focus {
-  outline: none;
-}
-
-/*============================================================================
-  Fast Tap
-  enables no-delay taps (FastClick-esque) on supporting browsers
-==============================================================================*/
-a,
-button,
-[role="button"],
-input,
-label,
-select,
-textarea {
-  touch-action: manipulation;
-}
-
-/*============================================================================
-  #Grid
-==============================================================================*/
-
-// The `$grid-breakpoints` list is used to build our media queries.
-// You can use these in the media-query mixin.
-$grid-breakpoints: (
-  $small '(max-width: #{$grid-medium - 1})',
-  $medium '(min-width: #{$grid-medium}) and (max-width: #{$grid-large - 1})',
-  $medium-down '(max-width: #{$grid-large - 1})',
-  $medium-up '(min-width: #{$grid-medium})',
-  $large '(min-width: #{$grid-large}) and (max-width: #{$grid-widescreen - 1})',
-  $large-down '(max-width: #{$grid-widescreen - 1})',
-  $large-up '(min-width: #{$grid-large})',
-  $widescreen '(min-width: #{$grid-widescreen})'
-);
-
-/*============================================================================
-  Grid Setup
-    1. Allow the grid system to be used on lists.
-    2. Remove any margins and paddings that might affect the grid system.
-    3. Apply a negative `margin-left` to negate the columns' gutters.
-==============================================================================*/
-.grid {
-  @include clearfix();
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  margin-left: -$grid-gutter;
-
-  @include media-query($small) {
-    margin-left: -$grid-gutter-mobile;
-  }
-}
-
-.grid__item {
-  float: left;
-  padding-left: $grid-gutter;
-  width: 100%;
-
-  @include media-query($small) {
-    padding-left: $grid-gutter-mobile;
-  }
-
-  &[class*="--push"] {
-    position: relative;
-  }
-}
-
-/*============================================================================
-  Reversed grids allow you to structure your source in the opposite
-  order to how your rendered layout will appear.
-==============================================================================*/
-.grid--rev {
-  direction: rtl;
-  text-align: left;
-
-  > .grid__item {
-    direction: ltr;
-    text-align: left;
-    float: right;
-  }
-}
-
-/*============================================================================
-  Grid Columns
-    - Create width classes, prepended by the breakpoint name.
-==============================================================================*/
-// sass-lint:disable brace-style empty-line-between-blocks
-@mixin grid-column-generator($grid-breakpoint-type: '') {
-  /* Whole */
-  .#{$grid-breakpoint-type}one-whole { width: 100%; }
-
-  /* Halves */
-  .#{$grid-breakpoint-type}one-half { width: percentage(1 / 2); }
-
-  /* Thirds */
-  .#{$grid-breakpoint-type}one-third { width: percentage(1 / 3); }
-  .#{$grid-breakpoint-type}two-thirds { width: percentage(2 / 3); }
-
-  /* Quarters */
-  .#{$grid-breakpoint-type}one-quarter { width: percentage(1 / 4); }
-  .#{$grid-breakpoint-type}two-quarters { width: percentage(2 / 4); }
-  .#{$grid-breakpoint-type}three-quarters { width: percentage(3 / 4); }
-
-  /* Fifths */
-  .#{$grid-breakpoint-type}one-fifth { width: percentage(1 / 5); }
-  .#{$grid-breakpoint-type}two-fifths { width: percentage(2 / 5); }
-  .#{$grid-breakpoint-type}three-fifths { width: percentage(3 / 5); }
-  .#{$grid-breakpoint-type}four-fifths { width: percentage(4 / 5); }
-
-  /* Sixths */
-  .#{$grid-breakpoint-type}one-sixth { width: percentage(1 / 6); }
-  .#{$grid-breakpoint-type}two-sixths { width: percentage(2 / 6); }
-  .#{$grid-breakpoint-type}three-sixths { width: percentage(3 / 6); }
-  .#{$grid-breakpoint-type}four-sixths { width: percentage(4 / 6); }
-  .#{$grid-breakpoint-type}five-sixths { width: percentage(5 / 6); }
-
-  /* Eighths */
-  .#{$grid-breakpoint-type}one-eighth { width: percentage(1 / 8); }
-  .#{$grid-breakpoint-type}two-eighths { width: percentage(2 / 8); }
-  .#{$grid-breakpoint-type}three-eighths { width: percentage(3 / 8); }
-  .#{$grid-breakpoint-type}four-eighths { width: percentage(4 / 8); }
-  .#{$grid-breakpoint-type}five-eighths { width: percentage(5 / 8); }
-  .#{$grid-breakpoint-type}six-eighths { width: percentage(6 / 8); }
-  .#{$grid-breakpoint-type}seven-eighths { width: percentage(7 / 8); }
-
-  /* Tenths */
-  .#{$grid-breakpoint-type}one-tenth { width: percentage(1 / 10); }
-  .#{$grid-breakpoint-type}two-tenths { width: percentage(2 / 10); }
-  .#{$grid-breakpoint-type}three-tenths { width: percentage(3 / 10); }
-  .#{$grid-breakpoint-type}four-tenths { width: percentage(4 / 10); }
-  .#{$grid-breakpoint-type}five-tenths { width: percentage(5 / 10); }
-  .#{$grid-breakpoint-type}six-tenths { width: percentage(6 / 10); }
-  .#{$grid-breakpoint-type}seven-tenths { width: percentage(7 / 10); }
-  .#{$grid-breakpoint-type}eight-tenths { width: percentage(8 / 10); }
-  .#{$grid-breakpoint-type}nine-tenths { width: percentage(9 / 10); }
-
-  /* Twelfths */
-  .#{$grid-breakpoint-type}one-twelfth { width: percentage(1 / 12); }
-  .#{$grid-breakpoint-type}two-twelfths { width: percentage(2 / 12); }
-  .#{$grid-breakpoint-type}three-twelfths { width: percentage(3 / 12); }
-  .#{$grid-breakpoint-type}four-twelfths { width: percentage(4 / 12); }
-  .#{$grid-breakpoint-type}five-twelfths { width: percentage(5 / 12); }
-  .#{$grid-breakpoint-type}six-twelfths { width: percentage(6 / 12); }
-  .#{$grid-breakpoint-type}seven-twelfths { width: percentage(7 / 12); }
-  .#{$grid-breakpoint-type}eight-twelfths { width: percentage(8 / 12); }
-  .#{$grid-breakpoint-type}nine-twelfths { width: percentage(9 / 12); }
-  .#{$grid-breakpoint-type}ten-twelfths { width: percentage(10 / 12); }
-  .#{$grid-breakpoint-type}eleven-twelfths { width: percentage(11 / 12); }
-}
-
-/*================ Grid push classes ================*/
-@mixin grid-push-generator($grid-breakpoint-type: '') {
-  /* Halves */
-  .#{$grid-breakpoint-type}push-one-half { left: percentage(1 / 2); }
-
-  /* Thirds */
-  .#{$grid-breakpoint-type}push-one-third { left: percentage(1 / 3); }
-  .#{$grid-breakpoint-type}push-two-thirds { left: percentage(2 / 3); }
-
-  /* Quarters */
-  .#{$grid-breakpoint-type}push-one-quarter { left: percentage(1 / 4); }
-  .#{$grid-breakpoint-type}push-two-quarters { left: percentage(2 / 4); }
-  .#{$grid-breakpoint-type}push-three-quarters { left: percentage(3 / 4); }
-
-  /* Fifths */
-  .#{$grid-breakpoint-type}push-one-fifth { left: percentage(1 / 5); }
-  .#{$grid-breakpoint-type}push-two-fifths { left: percentage(2 / 5); }
-  .#{$grid-breakpoint-type}push-three-fifths { left: percentage(3 / 5); }
-  .#{$grid-breakpoint-type}push-four-fifths { left: percentage(4 / 5); }
-
-  /* Sixths */
-  .#{$grid-breakpoint-type}push-one-sixth { left: percentage(1 / 6); }
-  .#{$grid-breakpoint-type}push-two-sixths { left: percentage(2 / 6); }
-  .#{$grid-breakpoint-type}push-three-sixths { left: percentage(3 / 6); }
-  .#{$grid-breakpoint-type}push-four-sixths { left: percentage(4 / 6); }
-  .#{$grid-breakpoint-type}push-five-sixths { left: percentage(5 / 6); }
-
-  /* Eighths */
-  .#{$grid-breakpoint-type}push-one-eighth { left: percentage(1 / 8); }
-  .#{$grid-breakpoint-type}push-two-eighths { left: percentage(2 / 8); }
-  .#{$grid-breakpoint-type}push-three-eighths { left: percentage(3 / 8); }
-  .#{$grid-breakpoint-type}push-four-eighths { left: percentage(4 / 8); }
-  .#{$grid-breakpoint-type}push-five-eighths { left: percentage(5 / 8); }
-  .#{$grid-breakpoint-type}push-six-eighths { left: percentage(6 / 8); }
-  .#{$grid-breakpoint-type}push-seven-eighths { left: percentage(7 / 8); }
-
-  /* Tenths */
-  .#{$grid-breakpoint-type}push-one-tenth { left: percentage(1 / 10); }
-  .#{$grid-breakpoint-type}push-two-tenths { left: percentage(2 / 10); }
-  .#{$grid-breakpoint-type}push-three-tenths { left: percentage(3 / 10); }
-  .#{$grid-breakpoint-type}push-four-tenths { left: percentage(4 / 10); }
-  .#{$grid-breakpoint-type}push-five-tenths { left: percentage(5 / 10); }
-  .#{$grid-breakpoint-type}push-six-tenths { left: percentage(6 / 10); }
-  .#{$grid-breakpoint-type}push-seven-tenths { left: percentage(7 / 10); }
-  .#{$grid-breakpoint-type}push-eight-tenths { left: percentage(8 / 10); }
-  .#{$grid-breakpoint-type}push-nine-tenths { left: percentage(9 / 10); }
-
-  /* Twelfths */
-  .#{$grid-breakpoint-type}push-one-twelfth { left: percentage(1 / 12); }
-  .#{$grid-breakpoint-type}push-two-twelfths { left: percentage(2 / 12); }
-  .#{$grid-breakpoint-type}push-three-twelfths { left: percentage(3 / 12); }
-  .#{$grid-breakpoint-type}push-four-twelfths { left: percentage(4 / 12); }
-  .#{$grid-breakpoint-type}push-five-twelfths { left: percentage(5 / 12); }
-  .#{$grid-breakpoint-type}push-six-twelfths { left: percentage(6 / 12); }
-  .#{$grid-breakpoint-type}push-seven-twelfths { left: percentage(7 / 12); }
-  .#{$grid-breakpoint-type}push-eight-twelfths { left: percentage(8 / 12); }
-  .#{$grid-breakpoint-type}push-nine-twelfths { left: percentage(9 / 12); }
-  .#{$grid-breakpoint-type}push-ten-twelfths { left: percentage(10 / 12); }
-  .#{$grid-breakpoint-type}push-eleven-twelfths { left: percentage(11 / 12); }
-}
-
-/*================ Clearfix helper on uniform grids ================*/
-@mixin grid-uniform-clearfix($grid-breakpoint-type: '') {
-  .grid--uniform {
-    .#{$grid-breakpoint-type}one-half:nth-child(2n+1),
-    .#{$grid-breakpoint-type}one-third:nth-child(3n+1),
-    .#{$grid-breakpoint-type}one-quarter:nth-child(4n+1),
-    .#{$grid-breakpoint-type}one-fifth:nth-child(5n+1),
-    .#{$grid-breakpoint-type}one-sixth:nth-child(6n+1),
-    .#{$grid-breakpoint-type}two-sixths:nth-child(3n+1),
-    .#{$grid-breakpoint-type}three-sixths:nth-child(2n+1),
-    .#{$grid-breakpoint-type}one-eighth:nth-child(8n+1),
-    .#{$grid-breakpoint-type}two-eighths:nth-child(4n+1),
-    .#{$grid-breakpoint-type}four-eighths:nth-child(2n+1),
-    .#{$grid-breakpoint-type}five-tenths:nth-child(2n+1),
-    .#{$grid-breakpoint-type}one-twelfth:nth-child(12n+1),
-    .#{$grid-breakpoint-type}two-twelfths:nth-child(6n+1),
-    .#{$grid-breakpoint-type}three-twelfths:nth-child(4n+1),
-    .#{$grid-breakpoint-type}four-twelfths:nth-child(3n+1),
-    .#{$grid-breakpoint-type}six-twelfths:nth-child(2n+1) { clear: both; }
-  }
-}
-
-// sass-lint:enable brace-style empty-line-between-blocks
-
-/*================ Build Base Grid Classes ================*/
-@include grid-column-generator();
-@include responsive-display-helper();
-@include responsive-text-align-helper();
-
-/*================ Build Responsive Grid Classes ================*/
-@each $breakpoint in $grid-breakpoint-has-widths {
-  @include media-query($breakpoint) {
-    @include grid-column-generator('#{$breakpoint}--');
-    @include grid-uniform-clearfix('#{$breakpoint}--');
-    @include responsive-display-helper('#{$breakpoint}--');
-    @include responsive-text-align-helper('#{$breakpoint}--');
-  }
-}
-
-/*================ Build Grid Push Classes ================*/
-@each $breakpoint in $grid-breakpoint-has-push {
-  @include media-query($breakpoint) {
-    @include grid-push-generator('#{$breakpoint}--');
-  }
-}
-
-/*================ #Helper Classes ================*/
-.clearfix {
-  @include clearfix();
-}
-
-.visually-hidden {
-  @include visually-hidden();
-}
-
-.visibility-hidden {
-  visibility: hidden;
-}
-
-.js-focus-hidden:focus {
-  outline: none;
-}
-
-// Only show when JS is not supported
-.no-js:not(html) {
-  display: none;
 
   .no-js & {
-    display: block;
+    @include visuallyHidden;
   }
 }
 
-// Only show when JS is supported
-.js {
-  .no-js & {
-    display: none;
-  }
-}
-
-.hide {
-  display: none !important;
-}
-
-/*============================================================================
-  Skip to content button
-    - Overrides .visually-hidden when focused
-==============================================================================*/
-.skip-link:focus {
-  clip: auto;
-  width: auto;
-  height: auto;
-  margin: 0;
-  color: $color-text;
-  background-color: $color-bg;
-  padding: 10px;
-  opacity: 1;
-  z-index: $z-index-skip-to-content;
-  transition: none;
-}
-
-/*=============== Lazy loading ===================*/
-
-.box {
-    background: no-repeat;
-    background-color: #f7f7f7;
-    background-size: contain;
-}
-.ratio-container {
-    position: relative;
-}
-.ratio-container:after {
-    content:'';
-    display: block;
-    height: 0;
-    width: 100%;
-    /* 16:9 = 56.25% = calc(9 / 16 * 100%) */
-    padding-bottom: 50%;
-    content:"";
-}
-.ratio-container > * {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-}
-
-/*================ #Basic Styles ================*/
-body,
-html {
-  background-color: $color-body;
-}
-
-.page-width {
-  @include clearfix();
-  max-width: $width-site;
-  margin: 0 auto;
-}
-
-.main-content {
-  display: block;
-  padding-top: $section-spacing-small;
-
-  @include media-query($medium-up) {
-    padding-top: $section-spacing;
-  }
-}
-
-.section-header {
-  margin-bottom: $section-spacing-small;
-
-  @include media-query($medium-up) {
-    margin-bottom: $section-spacing;
-  }
-}
-
-/*================ Typography ================*/
-blockquote {
-  font-size: em(18px);
-  font-style: normal;
-  text-align: center;
-  padding: 0 30px;
-  margin: 0;
-
-  .rte & {
-    border-color: $color-border;
-    border-width: 1px 0;
-    border-style: solid;
-    padding: 30px 0;
-    margin-bottom: $gutter-site / 2;
-  }
-
-  p + cite {
-    margin-top: $gutter-site / 2;
-  }
-
-  cite {
-    display: block;
-    font-size: 0.85em;
-    font-weight: $font-weight-normal;
-
-    &::before {
-      content: '\2014 \0020';
-    }
-  }
-}
-
-code,
-pre {
-  font-family: Consolas, monospace;
-  font-size: 1em;
-}
-
-pre {
-  overflow: auto;
-}
-
-body,
-input,
-textarea,
-button,
-select {
-  font-size: $font-size-base;
-  font-family: $font-stack-body;
-  color: $color-text;
-  line-height: 1.5;
-}
-
-// Prevent zoom on touch devices in active inputs
-@include media-query($medium-down) {
-  input,
-  textarea,
-  select,
-  button {
-    font-size: $font-size-mobile-input;
-  }
-}
-
-/*================ Headings ================*/
-h1,
-h2,
-h3,
-h4,
-h5,
-h6 {
-  margin: 0 0 ($section-spacing-small / 2);
-  font-family: $font-stack-header;
-  font-weight: $font-weight-header;
-  line-height: 1.2;
-  overflow-wrap: break-word;
-  word-wrap: break-word;
-
-  a {
-    color: inherit;
-    text-decoration: none;
-    font-weight: inherit;
-  }
-}
-
-h1 {
-  font-size: em(floor($font-size-header * 1.35));
-  text-transform: none;
-  letter-spacing: 0;
-
-  @include media-query($small) {
-    font-size: em(floor($font-size-header * 1.25));
-  }
-}
-
-h2 {
-  font-size: em(floor($font-size-header * 0.78));
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
-
-  @include media-query($small) {
-    font-size: em(floor(($font-size-header * 0.78) * 0.9));
-  }
-}
-
-h3 {
-  font-size: em($font-size-header);
-  text-transform: none;
-  letter-spacing: 0;
-
-  @include media-query($small) {
-    font-size: em(floor($font-size-header * 0.78));
-  }
-}
-
-h4 {
-  font-size: em(floor($font-size-header * 0.68));
-
-  @include media-query($small) {
-    font-size: em(floor(($font-size-header * 0.68) * 0.9));
-  }
-}
-
-h5 {
-  font-size: em(floor($font-size-header * 0.58));
-
-  @include media-query($small) {
-    font-size: em(floor(($font-size-header * 0.58) * 0.9));
-  }
-}
-
-h6 {
-  font-size: em(floor($font-size-header * 0.54));
-
-  @include media-query($small) {
-    font-size: em(floor(($font-size-header * 0.54) * 0.9));
-  }
-}
-
-.h1 {
-  @extend h1;
-}
-
-.h2 {
-  @extend h2;
-}
-
-.h3 {
-  @extend h3;
-}
-
-.h4 {
-  @extend h4;
-}
-
-.h5 {
-  @extend h5;
-}
-
-.h6 {
-  @extend h6;
-}
-
-/*================ RTE headings ================*/
-.rte {
-  color: $color-body-text;
-  margin-bottom: $section-spacing-small;
-
-  // If an .rte div is the last element in its parent,
-  // make it flush with the bottom of the container
-  &:last-child {
-    margin-bottom: 0;
-  }
-
-  h1,
-  h2,
-  h3,
-  h4,
-  h5,
-  h6 {
-    margin-top: $gutter-site;
-    margin-bottom: $gutter-site / 2;
-
-    &:first-child {
-      margin-top: 0;
-    }
-  }
-
-  li {
-    margin-bottom: 4px;
-    list-style: inherit;
-
-    &:last-child {
-      margin-bottom: 0;
-    }
-  }
-}
-
-// rte setting type to act like a <p> tag
-.rte-setting {
-  margin-bottom: $section-spacing-small / 1.8; // same as p
-
-  &:last-child {
-    margin-bottom: 0;
-  }
-}
-
-/*================ Paragraph styles ================*/
-p {
-  color: $color-body-text;
-  margin: 0 0 ($section-spacing-small / 1.8);
-
-  @include media-query($small) {
-    font-size: em($font-size-base - 1);
-  }
-
-  &:last-child {
-    margin-bottom: 0;
-  }
-}
-
-/*================ Lists ================*/
-li {
-  list-style: none;
-}
-
-/*================ Misc styles ================*/
-.fine-print {
-  font-size: em(14);
-  font-style: italic;
-}
-
-.txt--minor {
-  font-size: 80%; // match <small>
-}
-
-.txt--emphasis {
-  font-style: italic;
-}
-
-.address {
-  margin-bottom: $gutter-site;
-}
-
-/*================ Hero and slideshow headers ================*/
-.mega-title,
-.mega-subtitle {
-  text-shadow: 0 0 15px $color-text-shadow;
-}
-
-.mega-title {
-  margin-bottom: 8px;
-}
-
-.mega-title--large {
-  font-size: em($font-size-header + 8);
-
-  @include media-query($medium-up) {
-    font-size: em(floor($font-size-header * 2.5));
-  }
-}
-
-.mega-subtitle {
-  @include media-query($medium-up) {
-    font-size: em($font-size-base + 4);
-    margin: 0 auto;
-    max-width: 75%;
-  }
-
-  p {
-    color: inherit;
-  }
-}
-
-.mega-subtitle--large {
-  font-size: em($font-size-base + 2);
-  font-weight: $font-weight-header;
-
-  @include media-query($medium-up) {
-    font-size: em($font-size-base + 8);
-  }
-}
-
-/*================ #Icons ================*/
-.icon {
-  display: inline-block;
-  width: 20px;
-  height: 20px;
-  vertical-align: middle;
-  fill: currentColor;
-
-  .no-svg & {
-    display: none;
-  }
-}
-
-svg,
-symbol {
-  &.icon:not(.icon--full-color) {
-    circle,
-    ellipse,
-    g,
-    line,
-    path,
-    polygon,
-    polyline,
-    rect {
-      fill: inherit;
-      stroke: inherit;
-    }
-  }
-}
-
-/*============================================================================
-  A generic way to visually hide content while
-  remaining accessible to screen readers (h5bp.com)
-==============================================================================*/
-.icon__fallback-text {
-  @extend .visually-hidden;
-
-  .no-svg & {
-    // sass-lint:disable no-important
-    position: static !important;
-    overflow: inherit;
-    clip: none;
-    height: auto;
-    width: auto;
-    margin: 0;
-  }
-}
-
-/*================ Payment Icons ================*/
-.payment-icons {
-  @include user-select();
-  cursor: default;
-
-  .icon {
-    width: 30px;
-    height: 30px;
-  }
-}
-
-/*================ Social Icons ================*/
-.social-icons .icon {
-  width: 23px;
-  height: 23px;
-
-  @include media-query($medium-up) {
-    width: 25px;
-    height: 25px;
-  }
-
-  &.icon--wide {
-    width: 40px;
-  }
-}
-
-/*================ #Lists ================*/
-ul,
-ol {
-  margin: 0;
-  padding: 0;
-}
-
-ol {
-  list-style: decimal;
-}
-
-.list--inline {
-  padding: 0;
-  margin: 0;
-
-  li {
-    display: inline-block;
-    margin-bottom: 0;
-    vertical-align: middle;
-  }
-}
-
-/*================ #Rich Text Editor ================*/
-.rte {
-  img {
-    height: auto;
-  }
-
-  table {
-    table-layout: fixed;
-  }
-
-  ul,
-  ol {
-    margin: 0 0 ($section-spacing-small / 2) $section-spacing-small;
-
-    &.list--inline {
-      margin-left: 0;
-    }
-  }
-
-  ul {
-    list-style: disc outside;
-
-    ul {
-      list-style: circle outside;
-
-      ul {
-        list-style: square outside;
-      }
-    }
-  }
-
-  a:not(.btn) {
-    border-bottom: 1px solid currentColor;
-    padding-bottom: 1px;
-  }
-}
-
-.text-center.rte,
-.text-center .rte {
-  ul,
-  ol {
-    margin-left: 0;
-    list-style-position: inside;
-  }
-}
-
-// allow table to scroll for tables in the RTE since we don't know
-// how many columns they will contain. Class added by JS.
-.rte__table-wrapper {
-  // sass-lint:disable no-misspelled-properties
-  max-width: 100%;
-  overflow: auto;
-  -webkit-overflow-scrolling: touch;
-}
-
-/*================ #Links and Buttons ================*/
-a {
-  color: $color-text;
-  text-decoration: none;
-
-  &:hover,
-  &:focus {
-    opacity: $opacity-link-hover;
-  }
-
-  &.classic-link {
-    text-decoration: underline;
-  }
-}
-
-/*================ Buttons ================*/
-.btn {
-  @include user-select();
-  @include prefix(appearance, none, webkit moz spec);
-  display: inline-block;
-  width: auto;
-  text-decoration: none;
-  text-align: center;
-  vertical-align: middle;
-  cursor: pointer;
-  border: 1px solid transparent;
-  border-radius: $border-radius;
-  padding: $input-padding-top-bottom-small $input-padding-left-right-small;
-  background-color: $color-btn-primary;
-  color: $color-btn-primary-text;
-  font-family: $font-stack-header;
-  font-weight: $font-weight-header;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  white-space: normal;
-  font-size: $font-size-base - 2;
-
-  @include media-query($medium-up) {
-    padding: $input-padding-top-bottom $input-padding-left-right;
-  }
-
-  &:hover,
-  &:focus {
-    opacity: $opacity-link-hover;
-  }
-
-  .icon-arrow-right,
-  .icon-arrow-left {
-    height: 9px;
-  }
-
-  &[disabled] {
-    cursor: default;
-    opacity: 0.5;
-    background-color: $color-btn-primary;
-    color: $color-btn-primary-text;
-  }
-}
-
-.btn--secondary {
-  background-color: $color-small-button;
-  color: $color-small-button-text;
-  border-color: $color-border;
-}
-
-.btn--small {
-  font-family: $font-stack-body;
-  padding: 8px 10px;
-  font-size: em(12);
-  line-height: 1;
-}
-
-/*================ Button variations ================*/
-@include media-query($small) {
-  .btn--small-wide {
-    padding-left: 50px;
-    padding-right: 50px;
-  }
-}
-
-.btn--link {
-  background-color: transparent;
-  border: 0;
-  margin: 0;
-  color: $color-text;
-  text-align: left;
-
-  &:hover,
-  &:focus {
-    opacity: $opacity-link-hover;
-  }
-
-  .icon {
-    vertical-align: middle;
-  }
-}
-
-.btn--narrow {
-  padding-left: 15px;
-  padding-right: 15px;
-}
-
-.btn--disabled {
-  opacity: 0.5;
-  cursor: default;
-
-  &:hover,
-  &:focus {
-    opacity: 0.5;
-  }
-}
-
-.btn--has-icon-after {
-  .icon {
-    margin-left: 10px;
-  }
-}
-
-.btn--has-icon-before {
-  .icon {
-    margin-right: 10px;
-  }
-}
-
-/*================ Force an input/button to look like a text link ================*/
-.text-link {
-  display: inline;
-  border: 0 none;
-  background: none;
-  padding: 0;
-  margin: 0;
-}
-
-/*================ Return to collection/blog links ================*/
-.return-link-wrapper {
-  margin: ($gutter-site * 1.5) 0;
-
-  @include media-query($small) {
-    margin-bottom: (-$section-spacing) - 1; // same as .site-footer
-
-    .btn {
-      display: block;
-    }
-  }
-}
-
-/*================ #Tables ================*/
-table {
-  margin-bottom: $gutter-site / 2;
-}
-
-th {
-  font-family: $font-stack-header;
-  font-weight: $font-weight-bold;
-}
-
-th,
-td {
-  text-align: left;
-  border: 1px solid $color-border;
-  padding: 10px 14px;
-}
-
-/*============================================================================
-  Responsive tables, defined with .responsive-table on table element.
-==============================================================================*/
-@include media-query($small) {
-  .responsive-table {
-    thead {
-      display: none;
-    }
-
-    tr {
-      display: block;
-    }
-
-    // IE9 table layout fixes
-    tr,
-    td {
-      float: left;
-      clear: both;
-      width: 100%;
-    }
-
-    th,
-    td {
-      display: block;
-      text-align: right;
-      padding: $gutter-site / 2;
-      border: 0;
-      margin: 0;
-    }
-
-    td::before {
-      content: attr(data-label);
-      float: left;
-      text-align: center;
-      font-size: 12px;
-      padding-right: 10px;
-    }
-  }
-
-  .responsive-table__row + .responsive-table__row,
-  tfoot > .responsive-table__row:first-child {
-    position: relative;
-    margin-top: 10px;
-    padding-top: $gutter-site;
-
-    &::after {
-      content: '';
-      display: block;
-      position: absolute;
-      top: 0;
-      left: $gutter-site / 2;
-      right: $gutter-site / 2;
-      border-bottom: 1px solid $color-border;
-    }
-  }
-}
-
-/*================ #Images and Iframes ================*/
-svg:not(:root) {
-  overflow: hidden;
-}
-
-.video-wrapper {
-  position: relative;
-  overflow: hidden;
-  max-width: 100%;
-  padding-bottom: 56.25%;
-  height: 0;
-  height: auto;
-
-  iframe {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-  }
-}
-
-/*================ Forms ================*/
-form {
-  margin: 0;
-}
-
-fieldset {
-  border: 1px solid $color-border;
-  margin: 0 0 $gutter-site;
-  padding: $gutter-site / 2;
-}
-
-legend {
-  border: 0;
-  padding: 0;
-}
-
-button {
-  cursor: pointer;
-}
-
-input {
-  &[type="submit"] {
-    cursor: pointer;
-  }
-}
-
-label {
-  display: block;
-  margin-bottom: 5px;
-
-  @include media-query($small) {
-    font-size: em($font-size-base - 2px);
-  }
-
-  [type="radio"] + &,
-  [type="checkbox"] + & {
-    display: inline-block;
-    margin-bottom: 0;
-  }
-
-  &[for] {
-    cursor: pointer;
-  }
-}
-
-input,
-textarea,
-select {
-  border: 1px solid $color-border;
-  background-color: $color-text-field;
-  color: $color-text-field-text;
-  max-width: 100%;
-  line-height: 1.2;
-  border-radius: $border-radius;
-
-  &:focus {
-    border-color: darken($color-border, 10%);
-  }
-
-  &[disabled] {
-    cursor: default;
-    background-color: $color-disabled;
-    border-color: $color-disabled-border;
-  }
-
-  &.input--error {
-    &::-webkit-input-placeholder {
-      @include error-placeholder-text();
-    }
-
-    &::-moz-placeholder {
-      @include error-placeholder-text();
-    }
-
-    &:-ms-input-placeholder {
-      @include error-placeholder-text();
-    }
-
-    &::-ms-input-placeholder {
-      @include error-placeholder-text($opacity: 1);
-    }
-  }
-
-  &.hidden-placeholder {
-    &::-webkit-input-placeholder {
-      color: transparent;
-    }
-
-    &::-moz-placeholder {
-      color: transparent;
-    }
-
-    &:-ms-input-placeholder {
-      color: transparent;
-    }
-
-    &::-ms-input-placeholder {
-      opacity: 1;
-    }
-  }
-}
-
-textarea {
-  min-height: 100px;
-}
-
-/*================ Error styles ================*/
-input,
-select,
-textarea {
-  &.input--error {
-    border-color: $color-error;
-    background-color: $color-error-bg;
-    color: $color-error;
-  }
-}
-
-select {
-  @include prefix(appearance, none, webkit moz spec);
-  background-position: right center;
-  background: {
-    image: url($svg-select-icon);
-    repeat: no-repeat;
-    position: right 10px center;
-  }
-  line-height: 1.2;
-  padding-right: 28px;
-  text-indent: 0.01px;
-  text-overflow: '';
-  cursor: pointer;
-  padding-top: $input-padding-top-bottom-small;
-  padding-left: $input-padding-left-right-small;
-  padding-bottom: $input-padding-top-bottom-small;
-
-  @include media-query($medium-up) {
-    padding-top: $input-padding-top-bottom;
-    padding-left: $input-padding-left-right;
-    padding-bottom: $input-padding-top-bottom;
-  }
-
-  /*================ Hide the svg arrow in IE9 and below ================*/
-  .ie9 & {
-    padding-right: 10px;
-    background-image: none;
-  }
-}
-
-optgroup {
-  font-weight: $font-weight-bold;
-}
-
-// Force option color (affects IE only)
-option {
-  color: $color-text;
-  background-color: $color-body;
-}
-
-select::-ms-expand {
-  display: none;
-}
-
-/*================ Form labels ================*/
-.label--hidden {
-  position: absolute;
-  height: 0;
-  width: 0;
-  margin-bottom: 0;
-  overflow: hidden;
-  clip: rect(1px, 1px, 1px, 1px);
-
-  // No placeholders, so force show labels
-  .ie9 & {
-    position: static;
-    height: auto;
-    width: auto;
-    margin-bottom: 2px;
-    overflow: visible;
-    clip: initial;
-  }
-}
-
-::-webkit-input-placeholder {
-  @include placeholder-text();
-}
-
-::-moz-placeholder {
-  @include placeholder-text();
-}
-
-:-ms-input-placeholder {
-  @include placeholder-text();
-}
-
-::-ms-input-placeholder {
-  @include placeholder-text($opacity: 1);
-}
-
-/*================ Labels ================*/
-.label--error {
-  color: $color-error;
-}
-
-input,
-textarea {
-  padding: $input-padding-top-bottom-small $input-padding-left-right-small;
-
-  @include media-query($medium-up) {
-    padding: $input-padding-top-bottom $input-padding-left-right;
-  }
-}
-
-/*================ Vertical forms ================*/
-.form-vertical {
-  input,
-  select,
-  textarea {
-    display: block;
-    width: 100%;
-    margin-bottom: ($section-spacing-small / 1.8); // same as <p>
-  }
-
-  [type="radio"],
-  [type="checkbox"] {
-    display: inline-block;
-    width: auto;
-    margin-right: 5px;
-  }
-
-  [type="submit"],
-  .btn {
-    display: inline-block;
-    width: auto;
-  }
-}
-
-/*================ Form feedback messages ================*/
-.note,
-.form--success,
-.errors {
-  padding: $input-padding-top-bottom-small;
-  margin: 0 0 ($gutter-site / 2);
-
-  @include media-query($medium-up) {
-    padding: $input-padding-top-bottom;
-  }
-}
-
-.note {
-  border: 1px solid $color-border;
-}
-
-.form--success {
-  border: 1px solid $color-success;
-  background-color: $color-success-bg;
-  color: $color-success;
-}
-
-.errors {
-  border: 1px solid $color-error;
-  background-color: $color-error-bg;
-  color: $color-error-input-text;
-
-  // Shopify generates ul element
-  ul {
-    list-style: none;
-    padding: 0;
-    margin: 0;
-  }
-
-  a {
-    color: $color-error;
-    text-decoration: underline;
-  }
-}
-
-/*================ Input Groups ================*/
-
-.input-group {
-  position: relative;
-  display: table;
-  width: 100%;
-  border-collapse: separate;
-
-  .form-vertical & {
-    margin-bottom: $gutter-site;
-  }
-}
-
-.input-group__field,
-.input-group__btn {
-  display: table-cell;
-  vertical-align: middle;
-  margin: 0;
-}
-
-.input-group__field,
-.input-group__btn .btn {
-  height: $input-group-height-small;
-  padding-top: 0;
-  padding-bottom: 0;
-
-  @include media-query($medium-up) {
-    height: $input-group-height;
-  }
-}
-
-.input-group__field {
-  width: 100%;
-  border-right: 0;
-  border-radius: $border-radius 0 0 $border-radius;
-
-  .form-vertical & {
-    margin: 0;
-  }
-}
-
-.input-group__btn {
-  white-space: nowrap;
-  width: 1%;
-
-  .btn {
-    border-radius: 0 $border-radius $border-radius 0;
-    white-space: nowrap;
-  }
-}
-
-$dropdown-padding: 11px 17px;
-
-/*================ #Site Nav and Dropdowns ================*/
-.site-header__logo {
-  img {
-    display: block;
-  }
-}
-
-.site-nav {
-  position: relative;
-  padding: 0;
-  text-align: center;
-  margin: 25px 0;
-
-  a {
-    padding: 3px 10px;
-  }
-
-  li {
-    display: inline-block;
-  }
-}
-
-.site-nav--centered {
-  padding-bottom: $gutter-site-mobile;
-}
-
-/*================ Site Nav Links ================*/
-.site-nav__link {
-  display: block;
-  white-space: nowrap;
-
-  .site-nav--centered & {
-    padding-top: 0;
-  }
-
-  .icon-chevron-down {
-    width: 8px;
-    height: 8px;
-    margin-left: 2px;
-
-    .site-nav--active-dropdown & {
-      transform: rotateZ(-180deg);
-    }
-  }
-
-  &.site-nav--active-dropdown {
-    border: 1px solid $color-border;
-    border-bottom: 1px solid transparent;
-    z-index: 2;
-  }
-}
-
-/*================ Dropdowns ================*/
-.site-nav--has-dropdown {
-  position: relative;
-}
-
-.site-nav--has-centered-dropdown {
-  position: static;
-}
-
-.site-nav__dropdown {
-  display: none;
-  position: absolute;
-  left: 0;
-  padding: $dropdown-padding;
-  margin: 0;
-  z-index: $z-index-dropdown;
-  text-align: left;
-  border: 1px solid $color-border;
-  background: $color-bg;
-  left: -1px;
-  top: 41px;
-
-  .site-nav__link {
-    padding: 4px 30px 4px 0;
-  }
-
-  .site-nav--active-dropdown & {
-    display: block;
-  }
-
-  li {
-    display: block;
-  }
-}
-
-// Centered dropdown
-.site-nav__dropdown--centered {
-  width: 100%;
-  border: 0;
-  background: none;
-  padding: 0;
-  text-align: center;
-}
-
-/*================ Child list ================*/
-.site-nav__childlist {
-  display: inline-block;
-  border: 1px solid $color-border;
-  background: $color-bg;
-  padding: $dropdown-padding;
-  text-align: left;
-}
-
-.site-nav__childlist-grid {
-  @include display-flexbox();
-  @include flex-wrap(wrap);
-  width: auto;
-  margin-bottom: -$section-spacing-small;
-}
-
-.site-nav__childlist-item {
-  @include flex(0 1 auto);
-  margin-bottom: $section-spacing-small;
-}
-
-.site-nav__child-link--parent {
-  font-weight: $font-weight-bold;
-  margin: 4px 0;
-}
-
-.page-width {
-  padding-left: $gutter-site;
-  padding-right: $gutter-site;
-
-  @include media-query($small) {
-    padding-left: $gutter-site-mobile;
-    padding-right: $gutter-site-mobile;
-  }
-}
-
-.page-container {
-  transition: $transition-drawer;
-  position: relative;
-  overflow: hidden;
-
-  @include media-query($medium-up) {
-    // Prevent mobile menu inline styles from overriding desktop styles
-    // sass-lint:disable no-important
-    @include transform(translate3d(0, 0, 0));
-  }
-}
-
-hr {
-  margin: $gutter-site 0;
-  border: 0;
-  border-bottom: 1px solid $color-border;
-}
-
-.hr--small {
-  padding: 10px 0;
-  margin: 0;
-}
-
-.hr--invisible {
-  border-bottom: 0;
-}
-
-.border-bottom {
-  border-bottom: 1px solid $color-border;
-}
-
-.border-top {
-  border-top: 1px solid $color-border;
-}
-
-.empty-page-content {
-  padding: 125px $gutter-site;
-
-  @include media-query($small) {
-    padding-left: $gutter-site-mobile;
-    padding-right: $gutter-site-mobile;
-  }
-}
-
-.grid--table {
-  display: table;
-  table-layout: fixed;
-  width: 100%;
-
-  > .grid__item {
-    float: none;
-    display: table-cell;
-    vertical-align: middle;
-  }
-}
-
-.grid--no-gutters {
-  margin-left: 0;
-
-  .grid__item {
-    padding-left: 0;
-  }
-}
-
-.grid--half-gutters {
-  margin-left: -($grid-gutter / 2);
-
-  > .grid__item {
-    padding-left: $grid-gutter / 2;
-  }
-}
-
-.grid--double-gutters {
-  margin-left: -($grid-gutter * 2);
-
-  > .grid__item {
-    padding-left: $grid-gutter * 2;
-  }
-}
-
-.grid--flush-bottom {
-  margin-bottom: -$section-spacing;
-  overflow: auto;
-
-  > .grid__item {
-    margin-bottom: $section-spacing;
-  }
-}
-
-/*============================================================================
-  Animation Classes and Keyframes
-==============================================================================*/
-.is-transitioning {
-  // sass-lint:disable no-important
-  display: block !important;
-  visibility: visible !important;
-}
-
-@mixin animation($animation) {
-  @include prefix(animation, #{$animation}, moz o webkit spec);
-}
-
-@mixin keyframes($name) {
-  @-webkit-keyframes #{$name} {
-    @content;
-  }
-  @-moz-keyframes #{$name} {
-    @content;
-  }
-  @-ms-keyframes #{$name} {
-    @content;
-  }
-  @keyframes #{$name} {
-    @content;
-  }
-}
-
-@include keyframes(spin) {
-  0% {
-    @include transform(rotate(0deg));
-  }
-
-  100% {
-    @include transform(rotate(360deg));
-  }
-}
-
-.drawer {
-  // sass-lint:disable no-misspelled-properties
-  display: none;
-  position: absolute;
-  overflow: hidden;
-  -webkit-overflow-scrolling: touch;
-  z-index: $z-index-drawer;
-  background-color: $color-bg;
-  transition: $transition-drawer;
-
-  input[type="text"],
-  textarea {
-    background-color: $color-bg;
-    color: $color-text;
-  }
-}
-
-.js-drawer-open {
-  overflow: hidden;
-}
-
-.drawer--top {
-  width: 100%;
-
-  .js-drawer-open-top & {
-    @include transform(translateY(100%));
-    display: block;
-  }
-}
-
-.drawer-page-content::after {
-  visibility: hidden;
-  opacity: 0;
+.collection-hero__image-wrapper:after {
+  padding-bottom: 70%;
   content: '';
   display: block;
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background-color: $color-drawer-background;
-  z-index: $z-index-drawer - 1;
-  transition: $transition-drawer;
-
-  .js-drawer-open & {
-    visibility: visible;
-    opacity: 1;
-  }
-}
-
-.drawer__title,
-.drawer__close {
-  display: table-cell;
-  vertical-align: middle;
-}
-
-.drawer__close-button {
-  background: none;
-  border: 0 none;
-  position: relative;
-  right: -15px;
-  height: 100%;
-  width: 60px;
-  padding: 0 20px;
-  color: inherit;
-  font-size: em(18);
-
-  &:active,
-  &:focus {
-    background-color: darken($color-drawer-background, 5%);
-  }
-}
-
-.grid--view-items {
-  overflow: auto;
-  margin-bottom: -$section-spacing-small;
-}
-
-.grid-view-item {
-  margin: 0 auto $section-spacing-small;
-
-  .custom__item & {
-    margin-bottom: 0;
-  }
-}
-
-.grid-view-item__title {
-  margin-bottom: 0;
-  color: $color-text;
-
-  @if $font-bold-titles {
-    font-weight: $font-weight-bold;
-  }
-}
-
-.grid-view-item__meta {
-  margin-top: 8px;
-}
-
-@include media-query($small) {
-  .grid-view-item__title,
-  .grid-view-item__meta {
-    font-size: em($font-size-base - 1px);
-  }
-}
-
-.product-price__price {
-  display: inline-block;
-  color: $color-body-text;
-}
-
-.product-price__sale {
-  padding-right: 0;
-}
-
-.grid-view-item__link {
-  display: block;
-}
-
-.grid-view-item__vendor {
-  margin-top: 4px;
-  color: $color-body-text;
-  font-size: em($font-size-base - 2px);
-  text-transform: uppercase;
-
-  @include media-query($small) {
-    font-size: em($font-size-base - 3px);
-  }
-}
-
-.grid-view-item__image-wrapper {
-  margin: 0 auto $grid-gutter / 2;
-  position: relative;
-  width: 100%;
-}
-
-.grid-view-item__image {
-  display: block;
-  margin: 0 auto;
+  height: 0;
   width: 100%;
 
-  .grid-view-item__image-wrapper & {
-    position: absolute;
-    top: 0;
-  }
-
-  .grid-view-item--sold-out & {
-    opacity: 0.5;
-  }
-
-  &.lazyload {
-    opacity: 0;
-  }
-}
-
-.list-view-item {
-  display: table;
-  table-layout: fixed;
-  margin-bottom: $gutter-site-mobile;
-  width: 100%;
-
-  &:last-child {
-    margin-bottom: 0;
-  }
-
-  @include media-query($medium-up) {
-    border-bottom: 1px solid $color-border;
-    padding-bottom: $gutter-site-mobile;
-
-    &:last-child {
-      padding-bottom: 0;
-      border-bottom: 0;
-    }
-  }
-}
-
-.list-view-item__image {
-  max-height: 95px;
-}
-
-.list-view-item__image-column {
-  display: table-cell;
-  vertical-align: middle;
-  width: 130px;
-
-  @include media-query($small) {
-    width: 85px;
-  }
-}
-
-.list-view-item__image-wrapper {
-  position: relative;
-  margin-right: $section-spacing-small;
-
-  @include media-query($small) {
-    margin-right: $section-spacing-small / 2;
-  }
-}
-
-.list-view-item__title-column {
-  display: table-cell;
-  vertical-align: middle;
-}
-
-.list-view-item__title {
-  color: $color-text;
-  font-size: em($font-size-base + 2px);
-  min-width: 100px;
-
-  @if $font-bold-titles {
-    font-weight: $font-weight-bold;
-  }
-
-  @include media-query($small) {
-    font-size: em($font-size-base - 1px);
-  }
-}
-
-.list-view-item__sold-out {
-  font-size: em($font-size-base - 1px);
-}
-
-.list-view-item__on-sale {
-  color: $color-sale-text;
-  font-size: em($font-size-base - 1px);
-
-  @include media-query($small) {
-    display: none;
-  }
-}
-
-.list-view-item__vendor-column {
-  display: table-cell;
-  text-align: center;
-  vertical-align: middle;
-  width: 20%;
-}
-
-.list-view-item__vendor {
-  font-size: em($font-size-base - 1px);
-  font-style: italic;
-
-  @include media-query($small) {
-    font-size: em($font-size-base - 2px);
-  }
-}
-
-.list-view-item__price-column {
-  display: table-cell;
-  text-align: right;
-  vertical-align: middle;
-  width: 20%;
-  font-size: em($font-size-base + 1px);
-
-  @include media-query($small) {
-    font-size: em($font-size-base - 1px);
-  }
-
-  .product-price__sale {
-    display: block;
-  }
-
-  .product-price__sale-label,
-  .product-price__sold-out {
-    display: none;
-  }
-}
-
-.list-view-item__price {
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.list-view-item__price--reg {
-  color: $color-sale-text;
-
-  @include media-query($small) {
-    display: block;
-  }
-}
-
-.list-view-item__price--sale {
-  @include media-query($small) {
-    display: block;
-  }
-}
-
-/*============================================================================
-  Slick slider overrides
-==============================================================================*/
-$slick-dot-size: 12px;
-$slick-dot-size-small: 10px;
-
-.slick-dotted.slick-slider {
-  margin-bottom: 0;
-}
-
-/*================ Slick dots and prev/next pagination ================*/
-.slick-slider .slick-dots {
-  margin: 0;
-  width: auto;
-
-  li {
-    // sass-lint:disable SelectorDepth
-    margin: 0;
-    vertical-align: middle;
-    width: $slick-dot-size-small;
-    height: $slick-dot-size-small;
-    margin-left: 6px;
-
-    &:first-of-type {
-      margin-left: 0;
-    }
-
-    @include media-query($medium-up) {
-      width: $slick-dot-size;
-      height: $slick-dot-size;
-      margin-left: 8px;
-    }
-
-    button {
-      position: relative;
-      padding: 0;
-      width: $slick-dot-size-small;
-      height: $slick-dot-size-small;
-
-      @include media-query($medium-up) {
-        width: $slick-dot-size;
-        height: $slick-dot-size;
-      }
-    }
-
-    button::before {
-      text-indent: -9999px;
-      background-color: transparent;
-      border-radius: 100%;
-      background-color: currentColor;
-      width: $slick-dot-size-small;
-      height: $slick-dot-size-small;
-      opacity: 0.4;
-      transition: all 0.2s;
-
-      @include media-query($medium-up) {
-        width: $slick-dot-size;
-        height: $slick-dot-size;
-      }
-    }
-
-    &.slick-active button::before {
-      opacity: 1;
-    }
-
-    button:active::before {
-      opacity: 0.7;
-    }
-  }
-}
-
-/*================ Index sections ================*/
-.index-section {
-  padding-top: $section-spacing-small;
-  padding-bottom: $section-spacing-small;
-
-  @include media-query($medium-up) {
-    padding-top: $section-spacing;
-    padding-bottom: $section-spacing;
-  }
-
-  &:first-child {
-    padding-top: 0;
-    border-top: 0;
-  }
-
-  &:last-child {
-    padding-bottom: 0;
-  }
-}
-
-.index-section--flush + .index-section--flush {
-  margin-top: -($section-spacing-small * 2);
-
-  @include media-query($medium-up) {
-    margin-top: -($section-spacing * 2);
-  }
-}
-
-// Flush sections should be tight to the nav if they are the first on the page
-.index-section--flush:first-child {
-  margin-top: -$section-spacing-small;
-
-  @include media-query($medium-up) {
-    margin-top: -$section-spacing;
-  }
-}
-
-// Flush sections should be tight to the footer if they are last on the page
-.index-section--flush:last-child {
-  margin-bottom: -$section-spacing-small;
-
-  @include media-query($medium-up) {
-    margin-bottom: -$section-spacing;
-  }
-}
-
-// Visually align featured product section (if first on homepage on mobile)
-@include media-query($small) {
-  .index-section--featured-product:first-child {
-    margin-top: -12px;
-  }
-}
-
-$color-blankstate: rgba($color-body-text, 0.35);
-$color-blankstate-border: rgba($color-body-text, 0.2);
-$color-blankstate-background: rgba($color-body-text, 0.1);
-
-.placeholder-svg {
-  display: block;
-  fill: $color-blankstate;
-  background-color: $color-blankstate-background;
-  width: 100%;
-  height: 100%;
-  max-width: 100%;
-  max-height: 100%;
-  border: 1px solid $color-blankstate-border;
-}
-
-.placeholder-noblocks {
-  padding: 40px;
-  text-align: center;
-}
-
-// Mimic a background image by wrapping the placeholder svg with this class
-.placeholder-background {
-  position: absolute;
-  top: 0;
-  right: 0;
-  bottom: 0;
-  left: 0;
-
-  .icon {
-    border: 0;
-  }
-}
-
-// Custom styles for some blank state images
-.image-bar__content .placeholder-svg {
-  position: absolute;
-  top: 0;
-  left: 0;
-}
-
-
-/*================ TEMPLATES ================*/
-/*============= Templates | Password =============*/
-
-.template-password {
-  height: 100vh;
-}
-
-.password-page {
-  display: table;
-  height: 100%;
-  width: 100%;
-  color: $color-body-text;
-  background-color: $color-body;
-  background-size: cover;
-
-  .ie9 & {
-    height: auto;
-  }
-
-  .errors,
-  .form--success {
-    max-width: 500px;
-    margin-left: auto;
-    margin-right: auto;
-  }
-}
-
-.password-header {
-  height: 85px;
-  display: table-row;
-}
-
-.password-header__inner {
-  display: table-cell;
-  vertical-align: middle;
-}
-
-.password-login {
-  padding: 0 30px;
-  text-align: right;
-}
-
-.password-logo {
-  .logo {
-    color: $color-navigation-text;
-    font-weight: 700;
-    max-width: 100%;
-  }
-}
-
-.password-main {
-  display: table-row;
-  width: 100%;
-  height: 100%;
-  margin: 0 auto;
-}
-
-.password-main__inner {
-  display: table-cell;
-  vertical-align: middle;
-  padding: ($gutter-site / 2) $gutter-site;
-}
-
-.password-message {
-  max-width: 500px;
-  margin: ($gutter-site * 1.5) auto ($gutter-site / 2);
-}
-
-.password__input-group {
-  max-width: 340px;
-  margin: 0 auto $gutter-site;
-}
-
-.password__title {
-  margin-bottom: $gutter-site * 1.5;
-}
-
-.password__form-heading {
-  margin-bottom: $gutter-site;
-}
-
-.password-powered-by {
-  margin-top: $gutter-site * 1.5;
-}
-
-h1.product-single__title {
-  margin-bottom: 0;
-}
-
-.product-single__price {
-  color: $color-body-text;
-  font-size: em($font-size-base + 4);
-  font-weight: $font-weight-header;
-  margin-bottom: $grid-gutter;
-
-  @include media-query($small) {
-    display: block;
-    font-size: em($font-size-base + 2);
-  }
-}
-
-.product-single__vendor {
-  color: $color-body-text;
-  font-size: em($font-size-base);
-  text-transform: uppercase;
-  letter-spacing: 1px;
-  margin: 5px 0 10px;
-}
-
-/*================ Add to cart form ================*/
-.product-form {
-  @include display-flexbox();
-  @include flex-wrap(wrap);
-  @include align-items(flex-end);
-  width: auto;
-  margin: 0 -5px -10px;
-}
-
-.product-form__item {
-  @include flex(1 1 200px);
-  margin-bottom: 10px;
-  padding: 0 5px;
-
-  label {
-    display: block;
-
-    .product-form--hide-variant-labels & {
-      // sass-lint:disable no-important
-      position: absolute !important;
-      overflow: hidden;
-      clip: rect(0 0 0 0);
-      height: 1px;
-      width: 1px;
-      margin: -1px;
-      padding: 0;
-      border: 0;
-    }
-  }
-}
-
-.product-form__variants {
-  display: none;
-
-  .no-js & {
-    display: block;
-  }
-}
-
-.product-form__item--quantity {
-  @include flex(0 0 100px);
-}
-
-.product-form__item--submit {
-  @include flex-basis(200px);
-}
-
-.product-form__input {
-  display: block;
-  width: 100%;
-}
-
-.product-form__cart-submit {
-  display: block;
-  width: 100%;
-  line-height: 1.4;
-  padding-left: 5px;
-  padding-right: 5px;
-  white-space: normal;
-}
-
-@include media-query($medium-up) {
-  .product-form__cart-submit--small {
-    max-width: 300px;
-  }
-}
-
-.product-single__description {
-  margin-top: $grid-gutter;
-}
-
-/*================ Product Images ================*/
-.product-single__thumbnail {
-  display: block;
-  margin: -2px 0 8px;
-  border: 2px solid transparent;
-
-  &.active-thumb {
-    border-color: $color-text;
-  }
-}
-
-.product-single__thumbnail-image {
-  max-width: 100%;
-  display: block;
-}
-
-.product-featured-img {
-  display: block;
-  margin: 0 auto;
-  position: absolute;
-  top: 0;
-  width: 100%;
-
-  .no-js & {
-    position: relative;
-  }
-}
-
-// sass-lint:disable class-name-format
-.zoomImg {
-  background-color: $color-body;
-}
-// sass-lint:enable class-name-format
-
-@include media-query ($medium-up) {
-  .product-single__thumbnails {
-    margin-top: $grid-gutter;
-  }
-}
-
-@include media-query ($small) {
-  .product-single__photos {
-    margin-bottom: $grid-gutter;
-  }
-
-  .product-single__photo--has-thumbnails {
-    margin-bottom: $grid-gutter;
-  }
-}
-
-.product-single__photos--full {
-  margin-bottom: $grid-gutter;
-}
-
-.product-single__photo-wrapper {
-  margin: 0 auto;
-  width: 100%;
-}
-
-// Prevent reflow when image loads
-.product-single__photo {
-  margin: 0 auto;
-  min-height: 1px;
-  width: 100%;
-  height: 100%;
-  position: relative;
-}
-
-@include media-query($small) {
-  .template-product .main-content {
-    padding-top: $grid-gutter-mobile;
-  }
-
-  .thumbnails-slider--active {
-    .product-single__thumbnails {
-      display: none;
-
-      &.slick-initialized,
-      .ie9 & {
-        display: block;
-        margin: 0 auto;
-        max-width: 75%;
-      }
-    }
-  }
-
-  .product-single__photos {
-    position: relative;
-  }
-
-  .thumbnails-wrapper {
-    position: relative;
-    top: 30px;
-    text-align: center;
-    margin-bottom: 30px;
-  }
-
-  .thumbnails-slider__btn {
-    position: absolute;
-    top: 50%;
-    transform: translateY(-50%);
-  }
-
-  .thumbnails-slider__prev {
-    left: -20px;
-  }
-
-  .thumbnails-slider__next {
-    right: -20px;
-  }
-
-  .product-single__thumbnails-item {
-    display: inline-block;
-    padding-bottom: 10px;
-    width: 72px;
-    float: none;
-    vertical-align: middle;
-
-    .slick-slider & {
-      float: left;
-    }
-
-    .thumbnails-slider--active & {
-      padding: 5px 0;
-    }
-  }
-
-  .product-single__thumbnail {
-    margin: 0 auto;
-    width: 50px;
-  }
-}
-
-/*================ Template | Collections ================*/
-
-// Collection Hero
-//----------------------------------------
-.collection-hero {
-  position: relative;
-  overflow: hidden;
-  margin-top: -$gutter-site;
-  margin-bottom: $gutter-site-mobile;
-
-  @include media-query($medium-up) {
-    margin-bottom: $section-spacing-small;
-  }
-}
-
-.collection-description {
-  margin-bottom: $gutter-site-mobile;
-  margin-top: $gutter-site-mobile;
-
-  @include media-query($medium-up) {
-    margin-bottom: $section-spacing-small;
-    margin-top: $section-spacing-small;
+  @include at-query($min, $large) {
+    padding-bottom: 45%;
   }
 }
 
 .collection-hero__image {
+  position: absolute;
+  display: block;
+  width: 100%;
+  object-fit: cover;
+  object-position: 50% 50%;
+  // Used for the IE lazysizes object-fit polyfill
+  font-family: "object-fit: cover";
+  opacity: 0;
+
+  &.is-init {
+    opacity: 1;
+    @include animation(fadeIn 1s cubic-bezier(0.44, 0.13, 0.48, 0.87));
+  }
+}
+
+.collection-hero__image-no-js {
+  padding-bottom: 70%;
+  background-size: cover;
   background-position: 50% 50%;
   background-repeat: no-repeat;
-  background-size: cover;
-  height: 300px;
   opacity: 1;
 
-  @include media-query($small) {
-    height: 180px;
+  @include at-query($min, $large) {
+    padding-bottom: 45%;
   }
 }
 
-.collection-hero__title-wrapper::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  right: 0;
-  bottom: 0;
-  left: 0;
-  background-color: $color-image-overlay;
-  opacity: $opacity-image-overlay;
-}
-
-.collection-hero__title {
-  position: absolute;
-  color: $color-overlay-title-text;
-  width: 100%;
-  text-align: center;
-  left: 0;
-  right: 0;
-  top: 50%;
-  @include transform(translateY(-50%));
-
-  @include media-query($medium-up) {
-    font-size: em($font-size-header + 6);
-  }
-}
-
-.template-blog .social-sharing {
-  margin-bottom: $section-spacing-small / 2;
-}
-
-.blog--list-view .pagination {
-  padding-top: 0;
-}
-
-/*================ Cart page ================*/
-.cart {
-  th,
-  td {
-    border: 0;
-  }
-
-  td {
-    padding: $gutter-site-mobile 0;
-  }
-
-  th {
-    font-weight: $font-weight-normal;
-    padding: ($gutter-site / 2) 0;
-  }
-
-  .cart__meta {
-    padding-right: 15px;
-  }
-}
-
-.cart__meta-text {
-  padding: 5px 0;
-  font-size: em($font-size-base - 2);
-  font-style: italic;
-}
-
-.cart__qty-label {
-  @include visually-hidden();
-}
-
-.cart__qty-input {
-  text-align: center;
-  width: 60px;
-  padding-left: 5px;
-  padding-right: 5px;
-
-  @include media-query($small) {
-    padding-top: 2px;
-    padding-bottom: 2px;
-  }
-}
-
-.cart__edit {
-  margin-top: 10px;
-}
-
-.cart__edit-text--cancel {
-  .cart__edit--active & {
-    display: none;
-  }
-}
-
-.cart__edit-text--edit {
-  display: none;
-
-  .cart__edit--active & {
-    display: block;
-  }
-}
-
-.cart__edit-text--cancel,
-.cart__edit-text--edit {
-  pointer-events: none;
-}
-
-.cart__row {
-  p {
-    margin-bottom: 0;
-
-    + p {
-      margin-top: 10px;
-    }
-  }
-}
-
-.cart__subtotal-title {
-  font-size: em($font-size-base + 2px);
-}
-
-.cart__subtotal {
-  padding-left: $gutter-site / 2;
-
-  @include media-query($medium-up) {
-    padding-left: $gutter-site;
-    min-width: 150px;
-    display: inline-block;
-  }
-}
-
-.cart__savings {
-  padding-top: 18px;
-}
-
-.cart__savings-amount {
-  padding-left: $gutter-site / 2;
-
-  @include media-query($medium-up) {
-    padding-left: $gutter-site;
-    min-width: 150px;
-    display: inline-block;
-  }
-}
-
-.cart__footer {
-  padding-top: $section-spacing-small;
-}
-
-.cart__update--large {
-  margin-right: 10px;
-}
-
-.cart__continue--large {
-  margin-right: 10px;
-  line-height: 1.2;
-}
-
-.cart__shipping {
-  font-style: italic;
-  font-size: em($font-size-base - 2);
-  padding: 18px 0 20px;
-}
-
-.cart-note__label,
-.cart-note__input {
-  display: block;
-
-  @include media-query($small) {
-    margin: 0 auto;
-  }
-}
-
-.cart-note__label {
-  margin-bottom: 15px;
-}
-
-.cart-note__input {
-  min-height: 50px;
-  width: 100%;
-
-  @include media-query($small) {
-    margin-bottom: 40px;
-  }
-}
-
-.cart__image {
-  max-height: 95px;
-}
-
-.cart__image-wrapper a {
-  display: block;
-  padding-right: $section-spacing-small / 2;
-
-  @include media-query($medium-up) {
-    padding-right: $section-spacing-small;
-  }
-}
-
-@include media-query($medium-up) {
-  .cart__image-wrapper {
-    width: 130px;
-  }
-
-  .cart__meta {
-    max-width: 300px;
-  }
-
-  .cart__remove {
-    margin-top: 4px;
-  }
-
-  .cart__qty {
-    text-align: center;
-  }
-}
-
-@include media-query($small) {
-  .cart {
-    table {
-      display: block;
-      width: 100%;
-    }
-
-    thead {
-      display: none;
-    }
-
-    tr,
-    tbody {
-      width: 100%;
-    }
-
-    tbody {
-      display: block;
-    }
-
-    .cart__update-wrapper {
-      display: none;
-      padding-top: 0;
-      padding-bottom: $gutter-site-mobile;
-    }
-  }
-
-  .cart__update--show {
-    td {
-      padding-bottom: 10px;
-    }
-
-    .cart__update-wrapper {
-      @include display-flexbox();
-      @include align-items(center);
-      @include justify-content(space-between);
-      @include flex-wrap(wrap);
-    }
-  }
-
-  .cart-flex {
-    @include display-flexbox();
-    @include flex-wrap(wrap);
-    @include align-items(center);
-  }
-
-  .cart-flex-item {
-    display: block;
-    min-width: 0;
-    @include flex(1 1 100%);
-  }
-
-  .cart__meta {
-    @include flex(1 1 0%);
-  }
-
-  .cart__image-wrapper {
-    @include flex(0 0 85px);
-  }
-
-  .cart__price-wrapper {
-    @include flex(0 1 24%);
-    text-align: right;
-  }
-
-  .cart__header {
-    @include visually-hidden();
-  }
-
-  .cart-message {
-    padding-top: 20px;
-  }
-
-  .cart__qty {
-    padding: 0 10px;
-  }
-
-  .cart__qty-label {
-    @include visually-shown();
-    display: inline-block;
-    vertical-align: middle;
-    font-size: em(13);
-    margin-right: 5px;
-  }
-}
-
-.cart__continue-btn {
-  .cart--no-cookies & {
-    display: none;
-  }
-}
-
-.cart--empty-message {
-  .cart--no-cookies & {
-    display: none;
-  }
-}
-
-.cookie-message {
-  display: none;
-  padding-bottom: 25px;
-  
-  .cart--no-cookies & {
-    display: block;
-  }
-}
-
-.additional-checkout-buttons {
-  margin-top: $gutter-site-mobile;
-
-  // reset for paypal button
-  input[type="image"] {
+/*================ Module | Theme Header and Navigation Overrides ================*/
+@include at-query($max, $medium) {
+  .site-header {
     padding: 0;
-    border: 0;
-    background: transparent;
-  }
-}
 
-
-/*================ MODULES ================*/
-.site-header {
-  background-color: $color-body;
-  position: relative;
-  padding: 0 $gutter-site;
-
-  @include media-query($small) {
-    border-bottom: 1px solid $color-border;
-    padding: 0;
-  }
-
-  @include media-query($medium-up) {
-    &.logo--center {
-      padding-top: $grid-gutter;
-    }
-  }
-}
-
-.announcement-bar {
-  text-align: center;
-  position: relative;
-  z-index: $z-index-announcement-bar;
-}
-
-.announcement-bar--link {
-  display: block;
-}
-
-.announcement-bar__message {
-  display: block;
-  font-size: em(16);
-  font-weight: $font-weight-header;
-  padding: 10px $gutter-site-mobile;
-
-  @include media-query($medium-up) {
-    padding: 10px $gutter-site;
-  }
-}
-
-.site-header__logo {
-  margin: 15px 0;
-
-  .logo-align--center & {
-    text-align: center;
-    margin: 0 auto;
-
-    @include media-query($small) {
-      text-align: left;
-      margin: 15px 0;
-    }
-  }
-}
-
-.site-header__logo-link {
-  display: inline-block;
-  word-break: break-word;
-}
-
-.site-header__logo-image {
-  display: block;
-
-  @include media-query($medium-up) {
-    margin: 0 auto;
-  }
-}
-
-.site-header__logo-image img {
-  width: 100%;
-}
-
-.site-header__logo-image--centered img {
-  margin: 0 auto;
-}
-
-@include media-query($medium-up) {
-  .logo-align--center .site-header__logo-link {
-    margin: 0 auto;
-  }
-}
-
-@include media-query($small) {
-  .site-header__icons {
-    .btn--link,
-    .site-header__cart {
-      font-size: em($font-size-base);
-    }
-  }
-}
-
-.site-header__icons {
-  position: relative;
-  white-space: nowrap;
-}
-
-.site-header__icons-wrapper {
-  position: relative;
-  margin-right: -10px;
-}
-
-.site-header__cart,
-.site-header__search,
-.site-header__account {
-  position: relative;
-}
-
-.site-header__search {
-  padding-right: 45px;
-
-  .site-header__icons--plus & {
-    padding-right: 90px;
-  }
-}
-
-@include media-query($medium-up) {
-  .site-header__cart,
-  .site-header__account {
-    position: absolute;
-    top: 50%;
-    right: 0;
-    padding: 8px 0;
-    @include transform(translateY(-50%));
-  }
-
-  .site-header__account {
-    right: 50px;
-  }
-}
-
-.site-header__cart-title,
-.site-header__search-title {
-  display: inline-block;
-  vertical-align: middle;
-
-  @include visually-hidden();
-}
-
-.site-header__cart-title {
-  margin-right: 3px;
-}
-
-.site-header__cart-count {
-  display: block;
-  position: absolute;
-  top: -1px;
-  font-weight: bold;
-  background-color: $color-btn-primary;
-  color: $color-btn-primary-text;
-  border-radius: 9px;
-  min-width: 16px;
-  height: 16px;
-
-  span {
-    font-family: $font-stack-cart-notification;
-    display: block;
-    padding: 2px 5px;
-    font-size: 11px;
-    line-height: 1;
-  }
-
-  @include media-query($medium-up) {
-    .logo--center & {
-      right: -2px;
-    }
-
-    .logo--left & {
-      left: 12px;
-      top: 4px;
-    }
-  }
-}
-
-@include media-query($small) {
-  .site-header__cart-count {
-    top: 14px;
-    left: 22px;
-    border-radius: 11px;
-    min-width: 19px;
-    height: 19px;
-
-    span {
-      padding: 4px 6px;
-      font-size: 12px;
+    .grid--table {
+      height: $drawerHeaderHeight;
     }
   }
 }
 
 
-.site-header__menu {
-  display: none;
-}
+/*================ Logo Image ================*/
+.site-header__logo .logo--has-inverted {
+  @include transition(all 0.2s);
 
-.site-header .icon-search,
-.site-header .icon-hamburger,
-.site-header .icon-close,
-.site-header .icon-cart {
-  height: 30px;
-
-  @include media-query($medium-up) {
-    margin-right: 3px;
+  .is-light & {
+    opacity: 0;
+    visibility: hidden;
+    overflow: hidden;
+    height: 0;
   }
 }
 
-
-@include media-query($small) {
-  .site-header__logo {
-    padding-left: $gutter-site-mobile;
-  }
-
-  .site-header__icons {
-    padding-right: $gutter-site-mobile;
-  }
-
-  .site-header__menu,
-  .site-header__search-toggle,
-  .site-header__cart,
-  .site-header__account {
-    display: inline-block;
-    vertical-align: middle;
-    padding: 18px 8px;
-    margin: 0;
-
-    .site-header__icons--plus & {
-      padding: 18px 6px;
-    }
-  }
-
-  .site-header__logo {
-    text-align: left;
-
-    img {
-      margin: 0;
-    }
-  }
-}
-
-.article--listing {
-  padding-top: $gutter-site;
-  margin-bottom: $gutter-site;
-}
-
-.article__title {
-  margin-bottom: $gutter-site-mobile / 2;
-}
-
-.article__author {
-  margin-right: 10px;
-}
-
-.article__author,
-.article__date {
-  display: inline-block;
-  margin-bottom: $gutter-site-mobile;
-
-  .template-article & {
-    margin-bottom: 0;
-  }
-}
-
-.article__tags {
-  margin-bottom: $section-spacing / 2;
-}
-
-.article__tags--list {
-  font-style: italic;
-}
-
-/*============================================================================
-  Blog article grid
-==============================================================================*/
-.grid--blog {
-  margin-bottom: -$section-spacing;
-  overflow: auto;
-}
-
-.article__grid-tag {
-  margin-right: 10px;
-}
-
-.article__grid-meta {
-  margin-bottom: $section-spacing;
-}
-
-@include media-query($small) {
-  .article__grid-meta--has-image {
-    float: left;
-    width: percentage(6 / 10);
-    padding-left: $gutter-site-mobile;
-  }
-}
-
-.article__grid-excerpt {
-  margin-bottom: $section-spacing-small / 2;
-}
-
-.article__grid-image-wrapper {
-  margin: 0 auto;
-  width: 100%;
-}
-
-.article__grid-image-container {
-  display: block;
-  clear: both;
-  position: relative;
-
-  margin: 0 auto $section-spacing / 2 0;
-  min-height: 1px;
-  width: 100%;
-  height: 100%;
-
-  @include media-query($small) {
-    float: left;
-    margin: 0 0 $section-spacing 0;
-  }
-
-  img {
-    display: block;
-  }
-}
-
-.article__grid-image {
-  margin: 0 auto;
-  width: 100%;
-
-  .js & {
-    position: absolute;
-    top: 0;
-  }
-}
-
-.article__list-image-container {
-  display: block;
-  clear: both;
-  position: relative;
-
-  min-height: 1px;
-  width: 100%;
-  height: 100%;
-}
-
-.article__list-image-wrapper{
-  width: 100%;
-  margin-bottom: 20px;
-}
-
-.article__list-image-container {
-  display: block;
-  clear: both;
-  position: relative;
-
-  min-height: 1px;
-  width: 100%;
-  height: 100%;
-}
-
-.article__list-image-wrapper{
-  width: 100%;
-  margin-bottom: 20px;
-}
-
-.article__list-image {
-  margin: 0 auto;
-  width: 100%;
-  position: absolute;
-  top: 0;
-}
-
-.sidebar {
-  margin-top: 40px;
-}
-
-.sidebar__list {
-  list-style: none;
-  margin-bottom: $gutter-site;
-
-  li {
-    margin-bottom: 10px;
-  }
-}
-
-.pagination {
-  text-align: center;
-  list-style: none;
-  font-size: em(15);
-  padding-top: $section-spacing;
-
-  li {
-    display: inline-block;
-  }
-
-  .icon {
-    display: block;
-    height: 20px;
-    vertical-align: middle;
-  }
-}
-
-.pagination__text {
-  padding: 0 ($gutter-site / 2);
-}
-
-.comment {
-  margin-bottom: $grid-gutter;
-
-  &:last-child {
-    margin-bottom: 0;
-  }
-}
-
-.comment__content {
-  margin-bottom: 5px;
-}
-
-.comment__meta-item {
-  margin-right: 10px;
-  font-size: em(14);
-
-  &:first-child::before {
-    content: '\2014 \0020';
-  }
-}
-
-.btn--share {
-  margin-right: 5px;
-  margin-bottom: 10px;
-
-  .icon {
-    vertical-align: middle;
-    width: 16px;
-    height: 16px;
-    margin-right: 4px;
-  }
-
-  .icon-facebook {
-    fill: $color-facebook;
-  }
-
-  .icon-twitter {
-    fill: $color-twitter;
-  }
-
-  .icon-pinterest {
-    fill: $color-pinterest;
-  }
-}
-
-.share-title {
-  display: inline-block;
-  vertical-align: middle;
-}
-
-
-.search-bar__form {
-  display: table;
-  width: 100%;
-  position: relative;
-  height: 40px;
-  border: 1px solid transparent;
-}
-
-@include media-query($small) {
-  .search-bar__form {
-    width: 100%;
-  }
-}
-
-.search-bar__submit .icon {
-  position: relative;
-  top: -1px;
-  height: 30px;
-}
-
-.search-bar__submit,
-.search-header__submit {
-  display: inline-block;
-  vertical-align: middle;
-  position: absolute;
-  left: 0;
-  top: 0;
-  padding: 0 0 0 5px;
-  height: 100%;
-  z-index: 1;
-}
-
-.search-header__input,
-.search-bar__input {
-  background-color: transparent;
-  border-radius: $border-radius;
-  color: $color-text;
-  border-color: transparent;
-  padding-left: 35px;
-  width: 100%;
-
-  &::-webkit-input-placeholder {
-    @include placeholder-text($color-text);
-  }
-
-  &::-moz-placeholder {
-    @include placeholder-text($color-text);
-  }
-
-  &:-ms-input-placeholder {
-    @include placeholder-text($color-text, 0);
-  }
-
-  &::-ms-input-placeholder {
-    @include placeholder-text($color-text, 1);
-  }
-}
-
-.search-bar__input {
-  border: 1px solid transparent;
-
-  &:focus {
-    border-color: transparent;
-  }
-}
-
-/*============================================================================
-  The search submit button has pointer-events: none which also
-  effects the :hover style. This forces the style to be applied.
-==============================================================================*/
-.search-header__input:hover + .btn--link {
-  opacity: $opacity-link-hover;
-}
-
-/*================ Mobile Search Bar ================*/
-
-.search-bar {
-  border-bottom: 1px solid $color-border;
-  padding: 0 ($gutter-site / 2);
-}
-
-.search-bar__table {
-  display: table;
-  table-layout: fixed;
-  width: 100%;
-  height: 100%;
-}
-
-.search-bar__table-cell {
-  display: table-cell;
-  vertical-align: middle;
-}
-
-.search-bar__form-wrapper {
-  width: 90%;
-}
-
-/*================ Header Search ================*/
-.search-header {
-  display: inline-block;
-  position: relative;
-  width: 100%;
-  max-width: 30px;
-  vertical-align: middle;
-
-  &.search--focus {
-    max-width: 250px;
-  }
-}
-
-.search-header__input {
-  cursor: pointer;
-}
-
-.search--focus {
-  .search-header__input {
-    outline: none;
-    border-color: $color-border;
-    cursor: auto;
-  }
-
-  .search-header__submit {
-    padding-left: 10px;
-    pointer-events: auto;
-  }
-}
-
-.search-header__submit {
-  pointer-events: none;
-}
-
-.search-header,
-.search-header__submit {
-  transition: all 0.35s cubic-bezier(0.29, 0.63, 0.44, 1);
-}
-
-.no-svg {
-  .site-header__search {
-    display: inline-block;
-  }
-
-  .search-header {
-    max-width: none;
-  }
-
-  .search__input {
-    width: auto;
-    padding-left: 60px;
-  }
-}
-
-$return-button-width: 55px;
-$nav-button-padding: 15px;
-
-/*================ Mobile Site Nav ================*/
-.mobile-nav {
-  display: block;
-  @include transform(translate3d(0, 0, 0));
-  transition: $transition-drawer;
-
-  .sub-nav--is-open & {
-    @include transform(translate3d(-100%, 0, 0));
-  }
-
-  .third-nav--is-open & {
-    @include transform(translate3d(-200%, 0, 0));
-  }
-}
-
-.mobile-nav__link,
-.mobile-nav__sublist-link {
-  display: block;
-  width: 100%;
-  padding: $nav-button-padding ($nav-button-padding * 2);
-  font-size: $font-size-mobile-input;
-}
-
-.mobile-nav__link {
-  position: relative;
-}
-
-.mobile-nav__sublist-link:not(.mobile-nav__sublist-header) {
-  padding-left: $return-button-width + $nav-button-padding;
-  padding-right: ($nav-button-padding * 2);
-}
-
-.mobile-nav__item {
-  display: block;
-  width: 100%;
-
-  .icon {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    height: 12px;
-    width: 10px;
-    margin: -6px 0 0 -5px;
-  }
-}
-
-.mobile-nav__return {
-  border-right: 1px solid $color-border;
-}
-
-.mobile-nav__return-btn {
-  position: relative;
-  padding: 24px 0;
-  width: $return-button-width;
-}
-
-.mobile-nav__icon {
-  position: absolute;
-  right: 0;
-  top: 0;
-  bottom: 0;
-  padding-left: $gutter-site-mobile;
-  padding-right: $gutter-site-mobile;
-  pointer-events: none;
+.site-header__logo .logo--inverted {
+  opacity: 0;
+  visibility: hidden;
   overflow: hidden;
+  height: 0;
+
+  .is-light & {
+    opacity: 1;
+    visibility: visible;
+    height: auto;
+  }
 }
 
-.mobile-nav__table {
-  display: table;
-  width: 100%;
+/*================ Text Shop Name ================*/
+.site-header__logo {
+  font-size: em(20px);
+
+  @include at-query($min, $large) {
+    text-align: left;
+    font-size: em(25px);
+  }
+
+  @include at-query($max, $medium) {
+    img {
+      max-height: $drawerHeaderHeight - ($gutter / 2); // account for border-box height
+      margin-top: $gutter / 3;
+      margin-bottom: $gutter / 3;
+    }
+  }
 }
 
-.mobile-nav__table-cell {
-  display: table-cell;
-  vertical-align: middle;
-  width: 1%;
-  text-align: left;
+.site-header__logo a,
+.header-logo a {
+  @include transition(color 0.2s);
+  @include accentFontStack;
+
+  .is-light & {
+    color: #fff;
+  }
+
+  .is-dark & {
+    color: #000;
+  }
+}
+
+/*================ Nav Links ================*/
+.site-nav {
+  white-space: nowrap;
+  opacity: 0;
+
+  .no-js &,
+  &.site-nav--init {
+    opacity: 1;
+    @include transition('color 0.2s, opacity 0.1s');
+  }
+}
+
+.site-nav__item {
   white-space: normal;
 }
 
-.mobile-nav__toggle-button {
-  padding: 20px 15px;
+.site-nav__link {
+  @include accentFontStack;
+  font-size: em(14px);
+
+  .is-light & {
+    color: #fff;
+  }
+
+  .is-dark & {
+    color: #000;
+  }
 }
 
-.mobile-nav__dropdown {
-  position: absolute;
-  background-color: $color-body;
-  z-index: $z-index-sub-nav;
-  width: 100%;
-  top: 0;
-  right: -100%;
-  display: none;
+.site-nav--has-dropdown {
+  > a {
+    position: relative;
+    z-index: $zindexNavDropdowns + 1;
+  }
 
-  .is-active + & {
-    display: block;
+  &:hover > a {
+    color: $colorNavText;
+    background-color: $colorNav;
     opacity: 1;
-  }
+    @include transition(none);
 
-  // Need the transition so `prepareTransition` removes class
-  &.is-closing {
-    transition: $transition-drawer;
-    opacity: 0.99;
-  }
-
-  .mobile-nav__sublist-header {
-    font-family: $font-stack-header;
-    font-weight: $font-weight-header;
-    display: table-cell;
-    vertical-align: middle;
-    padding-left: $nav-button-padding;
-  }
-}
-
-/*================ Mobile nav wrapper ================*/
-.mobile-nav-wrapper {
-  @include transform(translate3d(0, -100%, 0));
-  position: absolute;
-  background-color: $color-body;
-  transition: $transition-drawer;
-  display: none;
-  overflow: hidden;
-  width: 100%;
-
-  &::after {
-    content: '';
-    position: absolute;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    border-bottom: 1px solid $color-border;
-  }
-
-  &.js-menu--is-open {
-    display: block;
+    &:before {
+      content: '';
+      position: absolute;
+      left: $gutter / 2;
+      right: $gutter;
+      bottom: 0;
+      display: block;
+      background-color: $colorNavText;
+      height: 1px;
+      z-index: $zindexNavDropdowns + 1;
+    }
   }
 }
 
-.mobile-nav--open {
-  .icon-close {
-    display: none;
-  }
-}
-
-.mobile-nav--close {
-  .icon-hamburger {
-    display: none;
-  }
-}
-
-/*================ Modals ================*/
-.modal {
-  @include transform(translateY(-20px));
-  background-color: $color-bg;
-  bottom: 0;
-  color: $color-text;
-  display: none;
-  left: 0;
-  opacity: 0;
-  overflow: hidden;
-  position: fixed;
-  right: 0;
-  top: 0;
-}
-
-.modal--is-active {
-  @include transform(translateY(0));
+/*================ Dropdown Animation ================*/
+.site-nav__dropdown {
   display: block;
-  opacity: 1;
+  visibility: hidden;
   overflow: hidden;
+  background-color: $colorNav;
+  min-width: 100%;
+  padding: ($gutter / 3) 0;
+  box-shadow: 0px 10px 20px rgba(0, 0, 0, 0.09);
+  @include transform(translate3d(0px, -12px, 0px));
+
+  .supports-no-touch .site-nav--has-dropdown:hover &,
+  .site-nav--has-dropdown.nav-hover &,
+  .nav-focus + & {
+    visibility: visible;
+    @include transform(translate3d(0px, 0px, 0px));
+    @include transition('all 300ms cubic-bezier(0.2, .06, .05, .95)');
+  }
+
 }
 
-.modal__inner {
-  @include prefix(transform-style, preserve-3d, moz webkit spec);
-  height: 100%;
-}
+/*================ Submenu items ================*/
+.site-nav__dropdown a {
+  background-color: transparent;
+  color: $colorTextBody;
 
-.modal__centered {
-  @include transform(translateY(-50%));
-  position: relative;
-  top: 50%;
-
-  .no-csstransforms & {
-    top: 20%;
+  &:hover,
+  &:active {
+    background-color: transparent;
+    color: $colorSecondary;
   }
 }
 
-.modal__close {
+.site-nav__dropdown-link {
+  @include bodyFontItalic;
+  display: block;
+  white-space: nowrap;
+  padding: 5px 15px;
+  font-size: em(16px);
+}
+
+/*================ Compressed nav if too many links ================*/
+.site-nav--compress {
+  .site-nav__expanded-item {
+    display: none;
+  }
+}
+
+.site-nav--compress__menu {
+  display: none;
+
+  .site-nav--compress & {
+    display: inline-block;
+  }
+}
+
+/*================ Search bar ================*/
+.site-nav--search__bar {
+  vertical-align: middle;
+  padding: 0 10px 7px 0;
+
+  input {
+    background-color: $colorInputBg;
+  }
+}
+
+/*================ Module | Theme Tags ================*/
+.tags {
+  a {
+    padding: 4px ($gutter / 2);
+    @include accentFontStack;
+    font-size: em(13px);
+    letter-spacing: 0.15em;
+  }
+}
+
+.tags--collection {
+  max-width: 75%;
+  margin: 0 auto 25px;
+
+  @include at-query($min, $large) {
+    li {
+      display: inline-block;
+    }
+  }
+
+  @include at-query($max, $small) {
+    li {
+      display: block;
+    }
+  }
+
+}
+
+.tags--article {
+  a {
+    padding-right: $gutter / 2;
+    padding-left: 0;
+  }
+}
+
+.tags__title {
+  margin-right: $gutter / 2;
+}
+
+.tag--active {
+  a {
+    color: $colorSecondary;
+  }
+}
+
+.single-option-radio {
   border: 0;
-  padding: $gutter-site;
-  position: fixed;
-  top: 0;
-  right: 0;
-
-  .icon {
-    font-size: em(20);
-  }
-}
-
-/*============================================================================
-  Hero slider
-
-  Extends default slick slider styles.
-  Extra specificity in selectors is used to override defaults.
-==============================================================================*/
-$slideshow-height-small: 475px;
-$slideshow-height-medium: 650px;
-$slideshow-height-large: 775px;
-$slideshow-loader: #fff;
-$z-index-slideshow-image: 1;
-$z-index-slideshow-video: 2;
-$z-index-slideshow-text: 3;
-$z-index-slideshow-controls: 4;
-$color-slideshow-close-bg: #fff;
-$color-slideshow-close-text: #000;
-
-.slideshow-wrapper {
+  padding-top: 0;
   position: relative;
-}
+  background-color: $colorBody;
 
-.slideshow {
-  overflow: hidden;
-  height: $slideshow-height-small - 150;
-  margin-bottom: 0;
+  input {
+    @include visuallyHidden;
 
-  &.slideshow--medium {
-    height: $slideshow-height-medium - 150;
-  }
-
-  &.slideshow--large {
-    height: $slideshow-height-large - 200;
-  }
-
-  @include media-query($medium-up) {
-    height: $slideshow-height-small;
-
-    &.slideshow--medium {
-      height: $slideshow-height-medium;
-    }
-
-    &.slideshow--large {
-      height: $slideshow-height-large;
+    .lt-ie9 & {
+      position: relative;
+      height: auto;
+      width: auto;
+      clip: initial;
     }
   }
 
-  // Make sure slides fill full height
-  .slideshow__slide,
-  .slick-list,
-  .slick-track {
-    height: 100%;
-  }
+  label {
+    @include accentFontStack;
+    position: relative;
+    display: inline-block;
+    line-height: 1;
+    padding: 9px 11px;
+    margin: 3px 4px 1px 3px;
+    font-size: em(13px);
+    font-style: normal;
+    background-color: $colorBody;
+    border: 1px solid $colorBody;
 
-  .slick-prev,
-  .slick-next {
-    top: 0;
-    height: 100%;
-    margin-top: 0;
-    width: 40px;
-  }
+    &.disabled:before {
+      position: absolute;
+      content: "";
+      left: 50%;
+      top: 0;
+      bottom: 0;
+      border-left: 1px solid;
+      border-color: $colorTextBody;
+      @include transform(rotate(45deg));
 
-  .slick-prev {
-    left: 0;
-  }
+      .lt-ie9 & {
+        display: none;
+      }
+    }
 
-  .slick-next {
-    right: 0;
-  }
-
-  .slick-dots {
-    bottom: $gutter-site-mobile;
-    text-align: center;
-    left: 50%;
-    transform: translateX(-50%);
-
-    // sass-lint:disable SelectorDepth
-    li button::before {
-      color: $color-slideshow-dots;
+    &:active,
+    &:focus {
+      background-color: adaptive-color($colorBody, 5%);
+      border-color: adaptive-color($colorBody, 5%);
     }
   }
-}
 
-.video-is-playing .slick-dots {
-  // sass-lint:disable no-important
-  display: none !important;
-}
+  //style selected radio button's label
+  input[type='radio']:checked + label {
+    border-color: $colorTextBody;
+  }
 
-// Pause button (focusable by keyboard only)
-.slideshow__pause:focus {
-  clip: auto;
-  width: auto;
-  height: auto;
-  margin: 0;
-  color: $color-btn-primary-text;
-  background-color: $color-btn-primary;
-  padding: $gutter-site / 2;
-  z-index: $z-index-skip-to-content;
-  transition: none;
-
-  .video-is-playing & {
-    display: none;
+  //style label on input focus
+  input[type='radio']:focus + label {
+    background-color: adaptive-color($colorBody, 5%);
   }
 }
 
-.slideshow__pause-stop {
+.radio-wrapper .single-option-radio__label {
   display: block;
-
-  .is-paused & {
-    display: none;
-  }
+  margin-bottom: 10px;
+  cursor: default;
+  font-style: normal;
 }
 
-.slideshow__pause-play {
-  display: none;
+/*================ Module | Product Lightbox ================*/
 
-  .is-paused & {
-    display: block;
-  }
-}
+.mfp-bg {
+  background-color: $colorBody;
 
-/*================ General slide styles ================*/
-.slideshow__slide {
-  position: relative;
-  overflow: hidden;
-}
-
-.slideshow__link {
-  display: block;
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-
-  &:active,
-  &:focus {
-    opacity: 1;
-  }
-}
-
-.slideshow__overlay {
-  @include overlay($z-index-slideshow-text);
-}
-
-/*================ Slide images ================*/
-.slideshow__image {
-  transition: $transition-image-slideshow;
-  position: absolute;
-  top: 0;
-  left: 0;
-  opacity: 0;
-  height: 100%;
-  width: 100%;
-  background-repeat: no-repeat;
-  background-size: cover;
-  background-position: top center;
-  z-index: $z-index-slideshow-image;
-
-  .slick-initialized &,
-  .no-js & {
-    opacity: 1;
-  }
-
-  .slideshow__slide--background-video & {
+  &.mfp-fade {
+    -webkit-backface-visibility: hidden;
     opacity: 0;
-  }
+    @include transition(all 0.3s ease-out);
 
-  .no-autoplay & {
-    opacity: 1;
+    //background opacity after load
+    &.mfp-ready {
+      opacity: 1;
+      filter: alpha(opacity=100);
+    }
+
+
+    &.mfp-removing {
+      @include transition(all 0.3s ease-out);
+      opacity: 0;
+      filter: alpha(opacity=0);
+    }
   }
 }
 
-// z-index stacking issues in oldIE
-.ie9 {
-  .slideshow__slide {
-    // sass-lint:disable no-important
-    z-index: 1 !important;
+.mfp-fade {
+  &.mfp-wrap {
+    .mfp-content {
+      opacity: 0;
+      @include transition(all 0.3s ease-out);
+    }
+
+    &.mfp-ready {
+      .mfp-content {
+        opacity: 1;
+      }
+    }
+
+    &.mfp-removing {
+        @include transition(all 0.3s ease-out);
+      .mfp-content {
+        opacity: 0;
+      }
+
+      button {
+        opacity: 0;
+      }
+    }
   }
 
-  .slick-dots {
+}
+
+.mfp-counter {
+  display: none;
+}
+
+.mfp-figure {
+  .mfp-gallery .mfp-image-holder & {
+    cursor: zoom-out;
+  }
+
+  &:after {
+    box-shadow: none;
+  }
+}
+
+.mfp-img {
+  background-color: $colorProductBackground;
+}
+
+button.mfp-close {
+  margin: 30px;
+  font-size: em(40px);
+  font-weight: 300px;
+  opacity: 1;
+  filter: alpha(opacity=100);
+  color: $colorTextBody;
+}
+
+button.mfp-arrow {
+  top: 0;
+  height: 100%;
+  width: 20%;
+  margin: 0;
+  opacity: 1;
+  filter: alpha(opacity=100);
+  z-index: 1045;
+
+  &:after,
+  & .mfp-a {
+    display: none;
+  }
+
+  &:before,
+  & .mfp-b {
+    display: none;
+  }
+
+  &:active {
+    margin-top: 0;
+  }
+}
+
+.mfp-chevron {
+  position: absolute;
+  pointer-events: none;
+
+  &:before {
+    content: '';
+    display: inline-block;
+    position: relative;
+    vertical-align: top;
+    height: 25px;
+    width: 25px;
+    border-style: solid;
+    border-width: 4px 4px 0 0;
+    @include transform(rotate(-45deg));
+  }
+
+  &.mfp-chevron-right {
+    right: 55px;
+
+    &:before {
+      @include transform(rotate(45deg));
+    }
+  }
+
+  &.mfp-chevron-left {
+    left: 55px;
+
+    &:before {
+      @include transform(rotate(-135deg));
+    }
+  }
+}
+
+
+.lt-ie9 {
+  .mfp-chevron:before,
+  .mfp-chevron:after {
+    content: " ";
+    position: absolute;
+    display: block;
+    border-width: 0;
+    width: 0;
+    height: 0;
+    top: 50%;
+    margin-top: -25px;
+    border-top: 25px solid transparent;
+    border-bottom: 25px solid transparent;
+  }
+
+  .mfp-chevron:before {
+    z-index: 5;
+  }
+
+  .mfp-chevron:after {
     z-index: 2;
   }
+
+  .mfp-chevron-right:after {
+    border-left: 25px solid $colorTextBody;
+    left: 80%;
+  }
+
+  .mfp-chevron-right:before {
+    border-left: 25px solid white;
+    left: 80%;
+  }
+
+  .mfp-chevron-left:after {
+    border-right: 25px solid $colorTextBody;
+    right: 80%;
+  }
+
+  .mfp-chevron-left:before {
+    border-right: 25px solid white;
+    right: 80%;
+  }
 }
 
-/*================ Slide text ================*/
-.slideshow__text-wrap {
-  height: 100%;
-
-  .slideshow__link & {
-    cursor: inherit;
-  }
-
-  .slideshow__slide--has-background-video & {
-    padding-top: $gutter-site * 3;
-  }
-
-  .video-is-playing & {
-    display: none;
-  }
-
-  .slideshow__slide.video-is-paused & {
-    display: none;
-  }
-}
-
-.slideshow__text-content {
+.grid-product__wrapper {
   text-align: center;
-  position: absolute;
-  width: 100%;
-  top: 50%;
-  @include transform(translateY(-40%));
-  opacity: 0;
-  transition: $transition-text-slideshow;
-  transition-delay: 0.3s;
-  z-index: $z-index-slideshow-text;
+  margin-bottom: $gutter;
 
-  .slick-active &,
-  .no-js & {
-    @include transform(translateY(-50%));
-    opacity: 1;
-  }
-
-  &::after {
-    content: '';
-    @include spinner(40px, $slideshow-loader);
-    @include animation(spin 0.65s infinite linear);
-    opacity: 1;
-    transition: all 1s cubic-bezier(0.29, 0.63, 0.44, 1);
-    bottom: -$gutter-site;
-    left: 50%;
-  }
-
-  .slick-initialized &,
-  .no-js & {
-    &::after {
-      opacity: 0;
-      visibility: hidden;
-      content: none;
-    }
+  .grid-collage & {
+    margin-bottom: 0;
   }
 }
 
-.slideshow__title {
-  color: $color-overlay-title-text;
-}
-
-.slideshow__subtitle {
-  display: block;
-  color: $color-overlay-title-text;
-}
-
-/*================ Video styles ================*/
-.slideshow__slide--has-background-video::after {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  z-index: $z-index-slideshow-video;
-}
-
-.slideshow__video {
-  display: none;
-  position: absolute;
-  left: 0;
-  top: 0;
-  z-index: $z-index-slideshow-video;
-}
-
-// Background video
-.slideshow__video--background {
+.grid-product__image-wrapper {
   position: relative;
-  visibility: hidden;
-  opacity: 0;
-  transition: all 0.2s ease-in;
-
-  .autoplay &.video-is-loaded {
-    display: block;
-    visibility: visible;
-    opacity: 1;
-  }
-}
-
-// Place invisible element over video to prevent clicks
-.slideshow__slide--background-video::after {
-  content: '';
-  display: block;
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  z-index: $z-index-slideshow-video;
-}
-
-.slideshow__video--chrome {
-  display: none;
-  opacity: 0;
-  visibility: none;
   width: 100%;
-  height: 100%;
-  transition: all 0.2s ease-in;
-
-  // YouTube video will not load if iframe is display: none
-  .ie9 & {
-    display: block;
-  }
-
-  .slideshow__slide.video-is-playing &,
-  .slideshow__slide.video-is-paused & {
-    display: block;
-    visibility: visible;
-    opacity: 1;
-  }
+  display: table;
+  table-layout: fixed;
 }
 
-/*================ Video control buttons ================*/
-.slideshow__video-control {
-  display: none;
-  visibility: hidden;
-  opacity: 0;
-  position: absolute;
-  padding: 5px;
-  z-index: $z-index-slideshow-controls;
-  transition: all 0.1s ease-out;
+.grid-product__image-link {
+  position: relative;
+  display: block;
+  width: 100%;
+  background-color: $colorProductBackground;
+  @include transition(opacity 0.4s ease-out);
+
+  .grid-collage & {
+    padding: 0 20px;
+  }
 
   &:hover,
   &:focus {
-    opacity: 0.7;
-  }
-}
+    opacity: 0.9;
+    @include transition(opacity 0.15s ease-in);
 
-// Video loader shown when initializing
-.video-loader {
-  @include spinner(40px, $slideshow-loader);
-  @include animation(spin 0.65s infinite linear);
-  transition: all 0.1s ease-out 0.5s;
-  z-index: $z-index-slideshow-controls;
-  top: 50%;
-  left: 50%;
-
-  .ie9 &,
-  .video-is-loaded &,
-  .video-is-playing &,
-  .video-is-paused &,
-  .autoplay &,
-  .no-autoplay & {
-    content: none;
-    display: none;
-  }
-
-  .video-is-loading &,
-  .autoplay .video-is-loading &,
-  .no-autoplay .video-is-loading & {
-    display: block;
-    visibility: visible;
-    opacity: 1;
-  }
-}
-
-.slideshow__video-control--play-wrapper {
-  height: 30px;
-
-  @include media-query($medium-up) {
-    height: 45px;
-  }
-}
-
-@include media-query($medium-up) {
-  .slideshow__video-control--play-wrapper--push {
-    margin-top: $grid-gutter;
-  }
-}
-
-.slideshow__video-control--play {
-  opacity: 0;
-  color: $color-overlay-title-text;
-  position: relative;
-  margin: 0 auto;
-
-  .slideshow__video--background {
-    top: 50%;
-    @include transform(translateY(-50%));
-  }
-
-  .video-is-loaded & {
-    display: block;
-    visibility: visible;
-    opacity: 1;
-  }
-
-  .video-is-loading &,
-  .video-is-playing &,
-  .slideshow__slide.video-is-paused & {
-    display: none;
-    visibility: hidden;
-    opacity: 0;
-  }
-
-  .icon {
-    width: 42px;
-    height: 100%;
-
-    @include media-query($medium-up) {
-      width: 65px;
+    /*================ Remove hover in IE8 and below ================*/
+    .lt-ie9 & {
+      @include transform('none');
     }
   }
-}
 
-.slideshow__video-control--close {
-  top: 10px;
-  right: 10px;
-  background-color: $color-slideshow-close-bg;
-  color: $color-slideshow-close-text;
-
-  .video-is-playing &,
-  .slideshow__slide.video-is-paused & {
-    display: block;
-    visibility: visible;
-    opacity: 1;
-  }
-
-  .icon {
-    display: block;
-    width: 20px;
-    height: 20px;
-  }
-}
-
-.product-price__price {
-  font-weight: $font-weight-header;
-
-  .grid-view-item.product-price--sold-out & {
-    text-decoration: line-through;
-  }
-}
-
-.product-price__sale--single {
-  padding-left: 10px;
-}
-
-.product-price__sale,
-.product__price--sale {
-  color: $color-sale-text;
-}
-
-.product-price__sale-label {
-  display: inline-block;
-  white-space: nowrap;
-  font-size: em($font-size-base - 1);
-}
-
-.product-price__sold-out {
-  font-weight: $font-weight-header;
-  white-space: nowrap;
-}
-
-/*================ Module | Filters and Sort toolbar and selection ================*/
-$toolbar-height: 55px;
-$toolbar-height-small: 46px;
-
-.filters-toolbar-wrapper {
-  border-bottom: 1px solid $color-border;
-  border-top: 1px solid $color-border;
-  margin-bottom: $gutter-site-mobile;
-
-  @include media-query($medium-up) {
-    margin-bottom: $section-spacing;
-  }
-}
-
-.filters-toolbar {
-  @include display-flexbox();
-  @include align-items(center);
-}
-
-.filters-toolbar__item {
-  min-width: 33%;
-  @include flex(1 1 33%);
-
-  .no-flexbox & {
-    // sass-lint:disable no-important
-    text-align: left !important;
-  }
-}
-
-.filters-toolbar__item--count {
-  min-width: 0;
-  @include flex(0 1 auto);
-  text-align: center;
-}
-
-.no-flexbox .filters-toolbar select {
-  // sass-lint:disable no-important
-  width: 100% !important; // override inline styles
-}
-
-.filters-toolbar__input {
-  @include transition(all ease-out 0.15s);
-  background-color: $color-body;
-  border: 0 solid transparent;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  max-width: 100%;
-  height: $toolbar-height;
-  opacity: 1;
-
-  @include media-query($small) {
-    height: $toolbar-height-small;
-  }
-
-  &.hidden {
-    opacity: 0;
-  }
-
-  option {
-    text-overflow: ellipsis;
+  .grid-uniform & {
+    display: table-cell;
+    vertical-align: middle;
     overflow: hidden;
   }
 }
 
-.filters-toolbar__input--sort {
-  margin-right: -10px;
-
-  .no-flexbox & {
-    margin: 0;
-  }
-}
-
-.filters-toolbar__input--filter {
-  margin-left: -15px;
-
-  .no-flexbox & {
-    margin: 0;
-  }
-}
-
-.filters-toolbar__product-count {
-  font-size: em($font-size-base - 1px);
-  font-style: italic;
-  line-height: $toolbar-height;
-  margin-bottom: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-
-  @include media-query($small) {
-    font-size: em($font-size-base - 2px);
-    line-height: $toolbar-height-small;
-  }
-}
-
-.site-footer {
-  margin: $section-spacing 0;
-
-  @include media-query($small) {
-    text-align: center;
-  }
-}
-
-@include media-query($medium-up) {
-  .site-footer__linklist--center {
-    margin-top: $section-spacing-small;
-    padding-right: 0;
-  }
-}
-
-.site-footer__linklist,
-.site-footer__newsletter {
-  margin-top: $section-spacing-small;
-
-  @include media-query($medium-up) {
-    margin-top: $section-spacing;
-  }
-}
-
-.site-footer__linklist-item {
-  display: inline-block;
-  padding: 5px 10px;
-
-  @include media-query($medium-up) {
-    display: block;
-    padding: 0 20px 6px 0;
-
-    .site-footer__linklist--center & {
-      display: inline-block;
-      padding: 3px 10px;
-    }
-  }
-}
-
-.site-footer__newsletter {
-  margin: $section-spacing-small auto 0;
-  max-width: 320px;
-
-  @include media-query($medium-up) {
-    margin: $section-spacing 0 0;
-    max-width: none;
-  }
-}
-
-.site-footer__social-icons,
-.site-footer__copyright {
-  margin-top: $section-spacing-small;
-
-  @include media-query($medium-up) {
-    margin-top: $section-spacing;
-  }
-}
-
-.social-icons__link {
-  display: block;
-  padding: 0 3px;
-
-  &:first-child {
-    margin-left: 0;
-  }
-}
-
-.site-footer__copyright {
-  text-align: center;
-}
-
-.site-footer__copyright-content {
-  font-size: em($font-size-base - 3);
-  padding-right: 20px;
-
-  .site-footer__copyright--right & {
-    padding: 0 0 0 20px;
-
-    &:first-child {
-      padding-left: 0;
-    }
-
-    @include media-query($medium-up) {
-      padding: 0 0 0 30px;
-    }
-  }
-}
-
-.site-footer__copyright-content--powered-by {
-  padding-right: 0;
-}
-
-.site-footer__payment-icons {
-  margin-top: ($gutter-site-mobile);
-
-  @include media-query($medium-up) {
-    margin-top: $gutter-site-mobile;
-
-    .site-footer__copyright--right & {
-      padding-left: 30px;
-    }
-  }
-
-  .payment-icon {
-    margin-right: 5px;
-
-    &:last-child {
-      margin-right: 0;
-    }
-  }
-}
-
-.site-footer__copyright--bottom {
-  margin-top: $section-spacing-small;
-}
-
-@include media-query($medium-up) {
-  .site-footer__payment-icons--right {
-    float: right;
-    margin-top: 0;
-  }
-}
-
-.feature-row {
-  @include display-flexbox();
-  @include justify-content(space-between);
-  @include align-items(center);
-
-  @include media-query($small) {
-    @include flex-direction(column);
-    display: block;
-  }
-}
-
-.feature-row__item {
-  @include flex(0 1 50%);
-
-  @include media-query($small) {
-    @include flex(1 1 auto);
-    max-width: 100%;
-  }
-}
-
-.feature-row__image-wrapper {
-  margin: 0 auto $section-spacing-small / 1.8;
-  position: relative;
-  width: 100%;
-}
-
-.feature-row__image {
+.grid-product__image {
   display: block;
   margin: 0 auto;
+}
 
-  .feature-row__image-wrapper & {
-    width: 100%;
+@include at-query($max, $small) {
+  .grid-uniform {
+    .grid-product__image-wrapper {
+      height: auto !important;
+    }
+  }
+}
+
+.grid-collage {
+  .grid-product__image {
     position: absolute;
-    top: 0;
-  }
+    top: 50%;
+    left: 50%;
+    max-height: 100%;
+    max-width: 100%;
+    padding: 20px;
+    @include prefix('transform', 'translate(-50%, -50%)');
+    @include backface();
 
-  @include media-query($small) {
-    order: 1;
-  }
-}
-
-.feature-row__text {
-  padding-top: $section-spacing-small;
-  padding-bottom: $section-spacing-small;
-
-  @include media-query($small) {
-    order: 2;
-    padding-bottom: 0; // always last element on mobile
+    .lt-ie9 & {
+      position: static;
+      max-height: 90%;
+      @include prefix('transform', 'translate(0, 0)');
+    }
   }
 }
 
-@include media-query($medium-up) {
-  .feature-row__text--left {
-    padding-left: $section-spacing-small;
-  }
-
-  .feature-row__text--right {
-    padding-right: $section-spacing-small;
-  }
-}
-
-@include media-query($medium-up) {
-  .featured-row__subtext {
-    font-size: em($font-size-base + 2);
-  }
-}
-
-.hero {
+.product--wrapper {
+  margin: 0 auto;
   position: relative;
-  height: 475px;
-  display: table;
   width: 100%;
-  background: {
-    size: cover;
-    repeat: no-repeat;
-    position: 50% 50%;
+
+  @include at-query($max, $small) {
+    margin: 20px auto;
   }
 }
 
-.hero--x-small {
-  height: 94px;
-}
+.product--image {
+  width: 100%;
+  position: absolute;
+  top: 0;
+  left: 0;
 
-.hero--small {
-  height: 225px;
-}
-
-.hero--medium {
-  height: 357px;
-}
-
-.hero--large {
-  height: 488px;
-}
-
-.hero--x-large {
-  height: 582px;
-}
-
-@include media-query($medium-up) {
-  .hero--x-small {
-    height: 125px;
+  &.lazyload {
+    opacity: 0;
   }
 
-  .hero--small {
-    height: 300px;
-  }
-
-  .hero--medium {
-    height: 475px;
-  }
-
-  .hero--large {
-    height: 650px;
-  }
-
-  .hero--x-large {
-    height: 775px;
+  .is-sold-out & {
+    opacity: 0.5;
   }
 }
 
-.hero__overlay {
-  @include overlay(1);
-}
-
-.hero__inner {
+.grid-product__meta {
   position: relative;
-  display: table-cell;
-  vertical-align: middle;
-  padding: $section-spacing 0;
-  color: $color-overlay-title-text;
-  z-index: 2;
-}
-
-.hero__btn {
-  background-color: $color-background-hero-button;
-  color: $color-text-hero-button;
-  margin-top: $section-spacing / 2;
-}
-
-/*================ Quote slider ================*/
-.quote-icon {
   display: block;
-  margin: 0 auto 20px;
+  padding: 13px 0;
 }
 
-// Text styles
-.quotes-slider__text {
-  font-size: em($font-size-base + 1.75);
-  font-weight: $font-weight-normal;
-  font-style: normal;
-  padding: 0 ($grid-gutter / 2);
+.grid-product__price-wrap {
+  white-space: nowrap;
+}
 
-  cite {
-    font-size: em($font-size-base, $font-size-base + 4);
-    font-style: normal;
-  }
+.long-dash {
+  margin: 0 4px;
+}
+
+.grid-product__title {
+  @include bodyFontItalic;
+  font-size: em(floor($baseFontSize * 1.25));  //20px based on 16px base font size
+}
+
+.grid-product__vendor {
+  @include accentFontStack;
+  letter-spacing: 0.2em;
+  font-size: em(11px);
+  margin: 1px 0;
+}
+
+.grid-product__price {
+  @include accentFontStack;
+  font-size: em(14px);
+}
+
+.grid-product__price-min {
+  position: relative;
+  top: -1px;
+  font-size: em(10px);
+  margin-left: -4px;
+}
+
+.grid-product__sold-out,
+.grid-product__on-sale {
+  @include accentFontStack;
+  font-size: em(11px);
+  line-height: 1.3;
+  position: absolute;
+  min-width: 50px;
+  border-radius: 25px;
+  top: -8px;
+  left: -8px;
 
   p {
-    margin-bottom: $grid-gutter;
+    padding: 12px 8px 10px 9px;
+    margin: 0;
+    letter-spacing: 1px;
+  }
 
-    + cite {
-      margin-top: 0;
+  sup {
+    display: none;
+  }
+}
+
+.grid-product__sold-out {
+  color: $colorTextBody;
+  border: 1px solid $colorTextBody;
+
+}
+
+.grid-product__on-sale {
+  color: $colorSaleTag;
+  border: 1px solid $colorSaleTag;
+}
+
+/*================ Product Carousel ================*/
+
+.product-single__photos {
+  @include at-query($max, $small) {
+    margin-top: -$contentTopMarginSmall;
+    margin-left: -($gutter / 2);
+    margin-right: -($gutter / 2);
+    padding-bottom: 55px;
+  }
+
+  .slick-dots {
+    background-color: $colorProductBackground;
+    bottom: 0;
+    padding: 15px;
+  }
+
+  .slick-dots li button {
+    &:before {
+      background-color: $colorTextBody;
+      opacity: 0.2;
+      width: 9px;
+      height: 9px;
+
+      .lt-ie9 & {
+        filter: alpha(opacity=20);
+      }
     }
   }
-}
 
-// Slick overrides
-.slick-dotted.quotes-slider.slick-initialized {
-  cursor: grab;
-  cursor: -moz-grab;
-  cursor: -webkit-grab;
-}
+  .slick-dots li.slick-active button {
+    &:before {
+      background-color: $colorTextBody;
+      border-color: $colorTextBody;
+      opacity: 1;
+      width: 11px;
+      height: 11px;
 
-// Slick dot positioning and color
-.quotes-wrapper .slick-dots {
-  position: relative;
-  bottom: 0;
-  margin-top: $section-spacing;
-
-  // sass-lint:disable SelectorDepth
-  li button::before {
-    color: $color-text;
-    opacity: 0.2;
+      .lt-ie9 & {
+        filter: alpha(opacity=100);
+      }
+    }
   }
+
 }
 
-// Slick selected outline overrides
-.quotes-wrapper .slick-slide[tabindex="0"] {
-  outline: none;
-}
-
-.logo-bar {
-  text-align: center;
-  margin-bottom: -$section-spacing-small;
-}
-
-@include media-query($medium-up) {
-  .logo-bar--large {
-    margin-bottom: -$section-spacing;
-  }
-}
-
-.logo-bar__item {
-  display: inline-block;
-  vertical-align: middle;
-  max-width: 160px;
-  margin: 0 ($section-spacing / 2) $section-spacing-small;
-}
-
-@include media-query($medium-up) {
-  .logo-bar__item--large {
-    margin-bottom: $section-spacing;
-  }
-}
-
-.logo-bar__image {
-  display: block;
-  margin: 0 auto;
-}
-
-.logo-bar__link {
-  display: block;
-}
-
-.map-section {
-  position: relative;
-  height: 650px;
-  width: 100%;
+/*================ Modules | Theme collection grid item ================*/
+.collection-collage__item {
   overflow: hidden;
-
-  @include media-query($medium-up) {
-    height: 500px;
-  }
-
-  .page-width {
-    height: 100%;
-  }
 }
 
-.map-section--load-error {
-  height: auto;
-}
-
-.map-section__overlay-wrapper {
+.collection-collage__item-wrapper {
   position: relative;
-  text-align: center;
+  overflow: hidden;
+  height: 100%;
+  width: 100%;
+
+  .collection-grid__item-overlay {
+    position: relative;
+    @include transition(all 0.8s ease);
+
+    &:after {
+      content: '';
+      position: absolute;
+      top: 0;
+      right: 0;
+      bottom: 0;
+      left: 0;
+      opacity: 0.25;
+      background-color: #000;
+      @include transition(all 0.8s ease);
+
+      .lt-ie9 & {
+        display: none;
+      }
+    }
+
+    &:hover,
+    &:focus {
+      @include transform(scale(1.03));
+
+      &:after {
+        opacity: 0.5;
+      }
+    }
+  }
+}
+
+.collection-grid__item-link {
+  display: block;
+  width: 100%;
   height: 100%;
 }
 
-.map-section__overlay {
-  position: relative;
-  display: inline-block;
-  background-color: $color-bg;
-  padding: $section-spacing-small;
-  margin-top: $gutter-site-mobile;
-  width: 100%;
-  text-align: center;
-  z-index: 3;
-
-  @include media-query($medium-up) {
-    position: absolute;
-    left: 0;
-    top: 50%;
-    transform: translateY(-50%);
-    margin-top: 0;
-    width: percentage(1 / 3);
-
-    .ie9 & {
-      top: 10%;
-    }
-  }
-
-  .map-section--load-error & {
-    position: static;
-    transform: translateY(0);
-  }
-}
-
-.map-section__link {
+.collection-grid__item-overlay {
   display: block;
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  z-index: 2;
-}
-
-// Optically center map in visible area with
-// extended height/widths and negative margins
-.map-section__container {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 150%;
-  margin-bottom: -50%;
-
-  @include media-query($medium-up) {
-    width: 130%;
-    height: 100%;
-    margin: 0 -30% 0 0;
-  }
-}
-
-// Hide Google maps UI
-.gm-style-cc,
-.gm-style-cc + div {
-  visibility: hidden;
-}
-
-@include media-query($small) {
-  .image-bar {
-    max-width: 400px;
-    margin: 0 auto;
-  }
-}
-
-.image-bar__item {
-  display: block;
-  color: $color-overlay-title-text;
-  background: {
-    repeat: no-repeat;
-    position: 50% 50%;
-    size: cover;
-  }
-}
-
-
-.image-bar__link {
-  &:focus {
-    .image-bar__content {
-      border-color: $color-image-overlay;
-    }
-  }
-}
-
-.image-bar__content, .image-bar__item {
-  position: relative;
-  width: 100%;
-
-  .image-bar--x-small & {
-    height: 94px;
-  }
-
-  .image-bar--small & {
-    height: 225px;
-  }
-
-  .image-bar--medium & {
-    height: 357px;
-  }
-
-  .image-bar--large & {
-    height: 488px;
-  }
-
-  .image-bar--x-large & {
-    height: 582px;
-  }
-
-  @include media-query($medium-up) {
-    .image-bar--x-small & {
-      height: 125px;
-    }
-
-    .image-bar--small & {
-      height: 300px;
-    }
-
-    .image-bar--medium & {
-      height: 475px;
-    }
-
-    .image-bar--large & {
-      height: 650px;
-    }
-
-    .image-bar--x-large & {
-      height: 775px;
-    }
-  }
-}
-
-.image-bar__overlay {
-  @include overlay;
-}
-
-.image-bar__caption {
-  position: absolute;
-  top: 50%;
-  @include transform(translateY(-50%));
-  transition: $transition-link-hover;
-  width: 100%;
-  text-align: center;
-}
-
-.collection-grid {
-  margin-bottom: -$gutter-site-mobile;
-  overflow: auto;
-}
-
-.collection-grid-item {
-  position: relative;
-  width: 100%;
-  padding-bottom: 100%;
-  margin-bottom: $gutter-site-mobile;
-
-  @include media-query($medium-up) {
-    margin-bottom: $grid-gutter;
-  }
-}
-
-.collection-grid-item__title {
-  color: $color-overlay-title-text;
-  position: absolute;
-  text-align: center;
-  width: 100%;
-  top: 50%;
-  padding: 0 5px;
-  @include transform(translateY(-50%));
-  transition: $transition-link-hover;
-  text-shadow: 0 0 15px $color-text-shadow;
-
-  @if $font-bold-titles {
-    font-weight: $font-weight-bold;
-  }
-
-  @include media-query($medium-up) {
-    padding: 0 15px;
-  }
-}
-
-.collection-grid-item__link {
-  border: 2px solid transparent;
-  position: absolute;
-  top: 0;
-  left: 0;
-  bottom: 0;
-  right: 0;
-
-  &:focus {
-    border-color: $color-image-overlay;
-  }
-}
-
-.collection-grid-item__overlay {
-  position: relative;
-  display: block;
+  overflow: hidden;
   height: 100%;
   width: 100%;
   background-size: cover;
   background-repeat: no-repeat;
-  background-position: center top;
-
+  background-position: center;
 }
 
-.collection-grid-item__title-wrapper::before {
-  content: '';
+.collection-grid__item-title--wrapper {
   position: absolute;
   top: 0;
-  right: 0;
-  bottom: 0;
-  left: 0;
-  background-color: $color-image-overlay;
-  opacity: $opacity-image-overlay;
+  height: 100%;
+  width: 100%;
+  pointer-events: none;
+  display: table;
+  table-layout: fixed;
+  color: #fff;
+  cursor: pointer;
+
+  .collection-grid__item-title {
+    display: table-cell;
+    vertical-align: middle;
+    margin: 0 auto;
+  }
 }
 
 .custom-content {
@@ -5570,25 +3435,25 @@ $toolbar-height-small: 46px;
   @include align-items(stretch);
   @include flex-wrap(wrap);
   width: auto;
-  margin-bottom: -$grid-gutter;
-  margin-left: -$grid-gutter;
+  margin-bottom: -$gridGutter;
+  margin-left: -$gridGutter;
 
-  @include media-query($small) {
-    margin-bottom: -$grid-gutter-mobile;
-    margin-left: -$grid-gutter-mobile;
+  @include at-query($max, $small) {
+    margin-bottom: -$gridGutterMobile;
+    margin-left: -$gridGutterMobile;
   }
 }
 
 .custom__item {
   @include flex(0 0 auto);
-  margin-bottom: $grid-gutter;
-  padding-left: $grid-gutter;
+  margin-bottom: $gridGutter;
+  padding-left: $gridGutter;
   max-width: 100%;
 
-  @include media-query($small) {
+  @include at-query($max, $small) {
     @include flex(0 0 auto);
-    padding-left: $grid-gutter-mobile;
-    margin-bottom: $grid-gutter-mobile;
+    padding-left: $gridGutterMobile;
+    margin-bottom: $gridGutterMobile;
 
     &.small--one-half {
       @include flex(1 0 50%);
@@ -5597,40 +3462,18 @@ $toolbar-height-small: 46px;
       margin-right: auto;
     }
   }
-
-  .collection-grid-item {
-    margin-bottom: 0;
-  }
-}
-
-.custom__item--image {
-  margin: 0 auto;
-  padding-left: 0;
 }
 
 .custom__item-inner {
   position: relative;
-  display: block;
+  display: inline-block;
   text-align: left;
   max-width: 100%;
 }
 
 .custom__item-inner--video,
-.custom__item-inner--collection,
 .custom__item-inner--html {
   display: block;
-}
-
-.custom__item-inner--image {
-  position: relative;
-  margin: 0 auto;
-}
-
-.custom__image {
-  width: 100%;
-  display: block;
-  position: absolute;
-  top: 0;
 }
 
 /*================ Flex item alignment ================*/
@@ -5670,10 +3513,319 @@ $toolbar-height-small: 46px;
   text-align: right;
 }
 
-.newsletter-section {
-  padding-top: $section-spacing;
+.featured-blog__post,
+.featured-blog__meta,
+.title--one-post {
+  margin-bottom: $gridGutter * 1.75;
+
+  @include at-query($max, $small) {
+    margin-bottom: $gridGutterMobile * 1.75;
+  }
 }
 
-.index-section--newsletter-background {
-  background-color: $color-newsletter-background;
+.featured-blog__author {
+  display: inline-block;
+  font-style: italic;
+  line-height: 1.7;
+
+  &:after {
+    content: '\2022';
+    margin: 0 5px;
+  }
 }
+
+.featured-blog__date {
+  display: inline-block;
+}
+
+/*================ View-specific styles ================*/
+/*================ Templates | Theme Blog ================*/
+.article {
+  margin-bottom: -($gutter / 2);
+}
+
+.article__featured-image-wrapper {
+  position: relative;
+
+  .no-js & {
+    @include visuallyHidden();
+  }
+}
+
+.article__featured-image {
+  display: block;
+  margin: 0 auto;
+  position: absolute;
+  width: 100%;
+  top: 0;
+  bottom: 0;
+  left: 0;
+}
+
+.article__featured-link {
+  display: block;
+  margin-bottom: $gutter;
+}
+
+/*================ RSS ================*/
+.rss-link {
+  font-size: 0.6em;
+}
+
+/*================ Comments ================*/
+.comment.last {
+  margin-bottom: -($gutter / 2);
+}
+
+/*============= Templates | Password page =============*/
+
+.template-password {
+  height: 100vh;
+  text-align: center;
+}
+
+.password-page__wrapper {
+  display: table;
+  height: 100%;
+  width: 100%;
+
+  @if $passwordPageUseBgImage {
+    background-image: url({{ 'password-page-background.jpg' | asset_url }});
+    background-size: cover;
+    background-repeat: no-repeat;
+    color: #ffffff;
+  } @else {
+    color: $colorTextBody;
+  }
+
+  a {
+    color: inherit;
+  }
+
+  hr {
+    @if $passwordPageUseBgImage {
+      border-color: inherit;
+    } @else {
+      border-color: $colorBorder;
+    }
+  }
+
+  .social-sharing.clean a {
+    color: inherit;
+    background: transparent;
+  }
+}
+
+.password-header-section {
+  display: table-row;
+}
+
+.password-page__header {
+  display: table-cell;
+  height: 1px;
+}
+
+.password-page__header__inner {
+  padding: ($gutter / 2) $gutter;
+}
+
+.password-page__logo {
+  margin-top: 3 * $gutter;
+
+  .logo {
+    max-width: 100%;
+  }
+
+  @if $passwordPageUseBgImage {
+    /* If we have a background image, we want to use a light-colored logo */
+    .logo--inverted {
+      display: inline;
+    }
+    /* If we have an inverted logo, we hide the default logo */
+    .logo--has-inverted {
+      display: none;
+    }
+  } @else {
+    .logo--inverted {
+      display: none;
+    }
+  }
+}
+
+.password-page__main {
+  display: table-row;
+  width: 100%;
+  height: 100%;
+  margin: 0 auto;
+}
+
+.password-page__main__inner {
+  display: table-cell;
+  vertical-align: middle;
+  padding: ( $gutter / 2 ) $gutter;
+}
+
+.password-page__hero {
+  font-family: $headerFontStack;
+  font-weight: $headerFontWeight;
+  font-size: em(42px);
+  line-height: 1.25;
+  text-transform: none;
+  letter-spacing: 0;
+  text-rendering: optimizeLegibility;
+
+  @include at-query($min, $postSmall) {
+    font-size: em(60px);
+  }
+
+  @include at-query($min, $large) {
+    font-size: em(64px);
+  }
+}
+
+.password-page__message {
+  font-style: italic;
+  font-size: 120%;
+
+  img {
+    max-width: 100%;
+  }
+}
+
+.password-page__hr {
+  margin: $gutter auto;
+}
+
+.password-page__message,
+.password-page__login-form,
+.password-page__signup-form {
+  max-width: 500px;
+  margin: 0 auto;
+}
+
+.password-page__login-form {
+  text-align: center;
+  padding: $gutter;
+}
+
+.password-page__login-form,
+.password-page__signup-form {
+  @include at-query($min, $small) {
+    padding: 0 $gutter;
+  }
+
+  .input-group {
+    width: 100%;
+  }
+
+  .errors ul {
+    list-style-type: none;
+    margin-left: 0;
+  }
+}
+
+.password-page__signup-form__heading {
+  margin-bottom: 0.8em;
+}
+
+.lt-ie9 .template-password {
+  .newsletter__submit-text--small,
+  .password-page__login-form__submit-text--small {
+    display: none !important;
+  }
+}
+
+.password-page__social-sharing {
+  margin-top: $gutter;
+}
+
+.password-page__social-sharing__heading {
+  margin-bottom: 0;
+}
+
+.password-login,
+.admin-login  {
+  margin-top: $gutter / 2;
+  a:hover {
+    color: inherit;
+  }
+}
+
+.password-login {
+  @include accentFontStack;
+  font-size: em( 0.8 * $baseFontSize );
+  line-height: 0.8 * $baseFontSize;
+}
+
+.lock-icon-svg {
+  width: 0.8 * $baseFontSize;
+  height: 0.8 * $baseFontSize;
+  display: inline-block;
+  vertical-align: baseline;
+
+  path {
+    fill: currentColor;
+  }
+
+  /* Hiding the SVG logo in IE8 */
+  .lt-ie9 & {
+    display: none;
+  }
+}
+
+.admin-login {
+  font-size: 95%;
+}
+
+.password-page__footer {
+  display: table-row;
+  height: 1px;
+}
+
+.password-page__footer_inner {
+  display: table-cell;
+  vertical-align: bottom;
+  padding: $gutter;
+  line-height: 1.5 * $baseFontSize;
+  font-size: 95%;
+}
+
+.shopify-link {
+  color: inherit;
+
+  &:hover {
+    color: inherit;
+  }
+}
+
+.shopify-logo-svg {
+  width: 1.5 * $baseFontSize * 120 / 35;
+  height: 1.5 * $baseFontSize;
+  display: inline-block;
+  line-height: 0;
+  vertical-align: top;
+
+  path {
+    fill: currentColor;
+  }
+
+  /* Hiding the SVG logo in IE8, we show the word 'Shopify' instead */
+  .lt-ie9 & {
+    display: none;
+  }
+}
+
+/* =========
+   Hiding the word 'Shopify' but not from screen readers.
+   IE8 does not support SVG, so in it we hide the logo and show the word.
+   To target all browsers except IE8, we use the class 'modern',
+   which needs to be added to the html element.
+   ========= */
+
+.shopify-name {
+  .modern & {
+    @include visuallyHidden;
+  }
+}
+
+
